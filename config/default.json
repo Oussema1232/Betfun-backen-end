@@ -1,0 +1,14 @@
+{
+  "secretkey": "secretkey",
+  "dbinfo": {
+    "host": "localhost",
+    "user": "root",
+    "password": "Oussema1.",
+    "database": "betfun_db"
+  },
+  "cloudinaryconfig": {
+    "cloud_name": "dgrzq2thq",
+    "api_key": "837833242294234",
+    "api_secret": "kzXKFRmtmldD1_mA6oTFKJC5hn4"
+  }
+}
