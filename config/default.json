@@ -4,7 +4,8 @@
     "host": "localhost",
     "user": "root",
     "password": "Oussema1.",
-    "database": "betfun_db"
+    "database": "betfun_db",
+    "multipleStatements": true
   },
   "cloudinaryconfig": {
     "cloud_name": "dgrzq2thq",

@@ -3,20 +3,18 @@ const express = require("express");
 const _ = require("lodash");
 const generateAuthToken = require("../token/createtoken");
 const connexion = require("../startup/database");
-const insertUser = require("../querry/insertdata");
 const authoriz = require("../middleware/authoriz");
 const auth = require("../middleware/auth");
-const deletedata = require("../querry/deletedata");
 
 const router = express.Router();
 
 //create user
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   connexion.query(
     `SELECT * FROM users WHERE email=?`,
     req.body.email,
     function (err, results) {
-      if (err) console.log(err.message);
+      if (err) return next(err);
 
       if (results[0])
         return res.status(400).send("user already registred by this email");
@@ -29,7 +27,7 @@ router.post("/", async (req, res) => {
     `SELECT * FROM users WHERE username=?`,
     req.body.username,
     function (err, results) {
-      if (err) console.log(err.message);
+      if (err) return next(err);
 
       if (results[0])
         return res.status(400).send("user already registred by this username");
@@ -40,7 +38,7 @@ router.post("/", async (req, res) => {
     `SELECT * FROM countries WHERE id=?`,
     req.body.countryId,
     function (err, results) {
-      if (err) console.log(err.message);
+      if (err) return next(err);
 
       if (!results[0])
         return res
@@ -60,7 +58,7 @@ router.post("/", async (req, res) => {
 
   let q = `INSERT INTO users SET?`;
   connexion.query(q, user, function (err, results) {
-    if (err) console.log(err.message);
+    if (err) return next(err);
     let userId = results.insertId;
     user.id = userId;
   });
@@ -74,34 +72,36 @@ router.post("/", async (req, res) => {
 
 //get user
 
-router.get("/:id", (req, res) => {
+router.get("/:id", auth, (req, res, next) => {
   connexion.query(`SELECT * FROM users WHERE id=?`, req.params.id, function (
     err,
     results
   ) {
-    if (err) console.log(err.message);
+    if (err) return next(err);
 
-    if (!results[0])
-      return res.status(400).send("user not found under this id");
+    if (!results) return res.status(400).send("user not found under this id");
     res.status(200).send(_.omit(results[0], ["userpassword"]));
   });
 });
 
 //delete user
-router.delete("/:id", [auth, authoriz], (req, res) => {
+router.delete("/:id", [auth, authoriz], (req, res, next) => {
   connexion.query(`SELECT * FROM users WHERE id=?`, req.params.id, function (
     err,
     results
   ) {
-    if (err) console.log(err.message);
+    if (err) return next(err);
 
     if (!results[0])
       return res.status(400).send("user not found under this id");
+    connexion.query(`DELETE FROM users WHERE id=?`, results[0].id, function (
+      err,
+      results
+    ) {
+      if (err) return next(err);
+      if (results) return res.status(200).send("user successfully deleted");
+    });
   });
-
-  const numrowsdeleted = deletedata("users", "id", req.params.id);
-
-  if (numrowsdeleted) return res.status(200).send(numrowsdeleted);
 });
 
 module.exports = router;

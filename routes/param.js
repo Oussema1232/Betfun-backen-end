@@ -7,7 +7,7 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-router.put("/:id", [auth, upload], async (req, res) => {
+router.put("/:id", [auth, upload], async (req, res, next) => {
   if (!req.params.id == req.user.id)
     return res.status(403).send("access forbidden!");
 
@@ -15,28 +15,47 @@ router.put("/:id", [auth, upload], async (req, res) => {
   if (req.file.path) {
     try {
       await cloudinary.uploader.upload(req.file.path).then((result) => {
-        if (result) profileimgURL = result.url;
+        profileimgURL = result.url;
       });
     } catch (err) {
-      console.log(err);
+      next(err);
     }
-  }
+    connexion.query(
+      `SELECT imgURL from users WHERE id=${req.user.id};UPDATE users SET email=?,username=?,birthdate=?,imgURL=? WHERE id=?`,
+      [
+        req.body.email,
+        req.body.username,
+        req.body.birthdate,
+        profileimgURL,
+        req.user.id,
+      ],
+      async (err, results) => {
+        if (err) {
+          if (profileimgURL != "url par defaut") {
+            await cloudinary.uploader.destroy(
+              profileimgURL.slice(
+                profileimgURL.lastIndexOf("/") + 1,
+                profileimgURL.lastIndexOf(".")
+              )
+            );
+          }
 
-  connexion.query(
-    `UPDATE users SET email=?,username=?,birthdate=?,imgURL=? WHERE id=?`,
-    [
-      req.body.email,
-      req.body.username,
-      req.body.birthdate,
-      profileimgURL,
-      req.user.id,
-    ],
-    function (err, results) {
-      if (err) console.log(err.message);
-      if (results.affectedRows)
-        return res.status(200).send("updated successfully");
-    }
-  );
+          return next(err);
+        }
+        if (results.affectedRows) {
+          if (results[0].imgURL != "url par defaut") {
+            await cloudinary.uploader.destroy(
+              results[0].imgURL.slice(
+                results[0].imgURL.lastIndexOf("/") + 1,
+                results[0].imgURL.lastIndexOf(".")
+              )
+            );
+          }
+          return res.status(200).send("updated successfully");
+        }
+      }
+    );
+  }
 });
 
 module.exports = router;

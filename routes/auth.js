@@ -1,17 +1,16 @@
 const bcrypt = require("bcrypt");
 const express = require("express");
 const generateAuthToken = require("../token/createtoken");
-const verify = require("../querry/getdata");
 
 const router = express.Router();
 
 //auth
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   connexion.query(
     `SELECT * FROM users WHERE email=?`,
     req.body.email,
     function (err, results) {
-      if (err) console.log(err.message);
+      if (err) return next(err);
 
       if (!results[0]) return res.status(400).send("invalid email or password");
     }
