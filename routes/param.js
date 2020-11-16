@@ -8,7 +8,7 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 router.put("/:id", [auth, upload], async (req, res, next) => {
-  if (!req.params.id == req.user.id)
+  if (req.params.id !== req.user.id)
     return res.status(403).send("access forbidden!");
 
   let profileimgURL = req.user.imgURL;

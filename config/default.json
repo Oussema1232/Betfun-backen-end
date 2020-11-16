@@ -1,5 +1,6 @@
 {
   "secretkey": "secretkey",
+  "emailsecret": "emailsecret",
   "dbinfo": {
     "host": "localhost",
     "user": "root",

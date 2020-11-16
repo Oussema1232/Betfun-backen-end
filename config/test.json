@@ -1,0 +1,16 @@
+{
+  "secretkey": "123456",
+  "emailsecret": "654321",
+  "dbinfo": {
+    "host": "localhost",
+    "user": "root",
+    "password": "Oussema1.",
+    "database": "betfundb_test",
+    "multipleStatements": true
+  },
+  "cloudinaryconfig": {
+    "cloud_name": "dgrzq2thq",
+    "api_key": "837833242294234",
+    "api_secret": "kzXKFRmtmldD1_mA6oTFKJC5hn4"
+  }
+}

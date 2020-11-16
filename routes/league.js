@@ -151,3 +151,5 @@ router.get("rank/:id/:season", auth, (req, res, next) => {
 });
 
 module.exports = router;
+
+//get leagues of logedIn user
