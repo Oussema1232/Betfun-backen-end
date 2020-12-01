@@ -40,15 +40,20 @@ router.post("/:emailtoken", (req, res, next) => {
             (error, results) => {
               if (error) return next(error);
               // const token = generateAuthToken(user, config.get("secretkey"));
-              res.status(200).json({
+              return res.status(200).json({
                 message: "account confirmed successfully",
+                data: decoded.email,
               });
             }
           );
-        } else {
-          res.status(200).json({
+        } else if (req.body.data == "account/resetpassword") {
+          return res.status(200).json({
             message: "Your email has been verified successfully",
             data: decoded.email,
+          });
+        } else {
+          res.status(500).json({
+            message: "Something is not right! ",
           });
         }
       }

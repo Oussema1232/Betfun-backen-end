@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const _ = require("lodash");
 const express = require("express");
 const generateAuthToken = require("../token/createtoken");
 const connexion = require("../startup/database");
@@ -40,7 +41,11 @@ router.post("/", (req, res, next) => {
         }
 
         const token = generateAuthToken(results[0], config.get("secretkey"));
-        res.send(token);
+        res.json({
+          token: token,
+          currentUser: _.omit(results[0], ["userpassword"]),
+          message:"you are in"
+        });
       } catch (err) {
         return next(err);
       }
