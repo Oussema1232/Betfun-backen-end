@@ -1,66 +1,68 @@
 const express = require("express");
-const shortid = require("shortid");
+
 const auth = require("../middleware/auth");
 const authoriz = require("../middleware/authoriz");
 const connexion = require("../startup/database");
+const nanoid = require("nanoid").nanoid;
 
 const router = express.Router();
 
 //create league
 //transaction
-router.post("/", auth, (req, res, next) => {
+router.post("/", (req, res, next) => {
   if (!req.body.name) return res.status(400).send("must insert league name");
-  const code = shortid.generate();
+  const code = nanoid(8);
   let newLeague = {
     name: req.body.name,
     code: code,
+    domainId: req.body.domainId,
   };
   connexion.beginTransaction(function (err) {
     if (err) {
       return next(err);
     }
-    connexion.query("INSERT INTO leagues SET?", newLeague, function (
-      err,
-      results,
-      fields
-    ) {
-      if (err) {
-        return connexion.rollback(function () {
-          return next(err);
-        });
-      }
-
-      let newUserLeague = {
-        userId: req.body.userId,
-        leagueId: results.insertId,
-      };
-
-      connexion.query("INSERT INTO user_league SET?", newUserLeague, function (
-        err,
-        results,
-        fields
-      ) {
+    connexion.query(
+      "INSERT INTO leagues SET?",
+      newLeague,
+      function (err, results, fields) {
         if (err) {
           return connexion.rollback(function () {
             return next(err);
           });
         }
 
-        connexion.commit(function (err) {
-          if (err) {
-            return connexion.rollback(function () {
-              return next(err);
+        let newUserLeague = {
+          userId: req.body.userId,
+          leagueId: results.insertId,
+        };
+
+        connexion.query(
+          "INSERT INTO user_league SET?",
+          newUserLeague,
+          function (err, results, fields) {
+            if (err) {
+              return connexion.rollback(function () {
+                return next(err);
+              });
+            }
+
+            connexion.commit(function (err) {
+              if (err) {
+                return connexion.rollback(function () {
+                  return next(err);
+                });
+              }
+              res.status(200).send(code);
             });
           }
-          res.status(200).send(code);
-        });
-      });
-    });
+        );
+      }
+    );
   });
 });
 
 //join league
-router.post("/join/", auth, (req, res, next) => {
+router.post("/join", (req, res, next) => {
   connexion.query(
     `SELECT * FROM leagues WHERE code=?`,
     req.body.code,
@@ -79,18 +81,34 @@ router.post("/join/", auth, (req, res, next) => {
             return res
               .status(400)
               .send("you are already registred in this league");
-          let q = `INSERT INTO user_league SET?`;
-          let userleague = {
-            userId: req.body.userId,
-            leagueId: leagueresult.id,
-          };
-          connexion.query(q, userleague, function (err, results) {
-            if (err) return next(err);
-            if (results)
-              return res
-                .status(200)
-                .send(`You have successfully joined ${leagueresult.name}`);
-          });
+          connexion.query(
+            `
+          SELECT * FROM user_domains
+          JOIN betfun_domains
+          ON betfun_domains.id=domainId
+          WHERE userId=? AND domainId=?
+          `,
+            [req.body.userId, leagueresult.domainId],
+            (error, result) => {
+              if (error) return next(error);
+              if (!result[0])
+                return res
+                  .status(400)
+                  .send("user not registered in this domain");
+              let q = `INSERT INTO user_league SET?`;
+              let userleague = {
+                userId: req.body.userId,
+                leagueId: leagueresult.id,
+              };
+              connexion.query(q, userleague, function (err, results) {
+                if (err) return next(err);
+                if (results)
+                  return res
+                    .status(200)
+                    .send(`You have successfully joined ${leagueresult.name}`);
+              });
+            }
+          );
         }
       );
     }
@@ -99,7 +117,7 @@ router.post("/join/", auth, (req, res, next) => {
 
 //delete leagues
 
-router.delete("/", [auth, authoriz], (req, res) => {
+router.delete("/", [authoriz], (req, res) => {
   connexion.query("DELETE FROM leagues", function (err, results) {
     if (err) return next(err);
     if (results) return res.status(200).send(`leagues table deleted`);
@@ -107,22 +125,22 @@ router.delete("/", [auth, authoriz], (req, res) => {
 });
 
 //order of users in a specific league (and specific month) and specific season
-router.get("rank/:id/:season/:month", auth, (req, res, next) => {
+router.get("/rank/:id/:seasonId/:month/:domainId", (req, res, next) => {
   const q = `
   Select username,month_name,SUM(points) AS total_points FROM bets
   JOIN users
   ON bets.userId=users.id
   JOIN gameweeks
-  ON gameweeks.gameweek=bets.gameweek
+  ON gameweeks.gameweek=bets.gameweekId
   JOIN user_league 
   ON user_league.userId=users.id
-  WHERE month_name=? AND user_league.leagueId=? AND gameweeks.season=?
+  WHERE month_name=? AND user_league.leagueId=? AND gameweeks.seasonId=? AND gameweeks.domainId=?
   GROUP BY bets.userId,month_name
   ORDER BY points DESC;
   `;
   connexion.query(
     q,
-    [req.params.month, req.params.id, req.params.season],
+    [req.params.month, req.params.id, req.params.seasonId, req.params.domainId],
     (error, result) => {
       if (error) return next(error);
       return res.status(200).json(result);
@@ -131,25 +149,43 @@ router.get("rank/:id/:season/:month", auth, (req, res, next) => {
 });
 
 //order of users in a specific league  and specific season
-router.get("rank/:id/:season", auth, (req, res, next) => {
+router.get("/rank/:id/:seasonId/:domainId", (req, res, next) => {
   const q = `
   Select username,month_name,SUM(points) AS total_points FROM bets
   JOIN users
   ON bets.userId=users.id
   JOIN gameweeks
-  ON gameweeks.gameweek=bets.gameweek
+  ON gameweeks.gameweek=bets.gameweekId
   JOIN user_league 
   ON user_league.userId=users.id
-  WHERE user_league.leagueId=? AND gameweeks.season=?
+  WHERE user_league.leagueId=? AND gameweeks.seasonId=? AND gameweeks.domainId=?
   GROUP BY bets.userId,month_name
   ORDER BY points DESC;
   `;
-  connexion.query(q, [req.params.id, req.params.season], (error, result) => {
+  connexion.query(
+    q,
+    [req.params.id, req.params.seasonId, req.params.domainId],
+    (error, result) => {
+      if (error) return next(error);
+      return res.status(200).json(result);
+    }
+  );
+});
+
+//get leagues of logedIn user
+
+router.get("/:id/:domainId", (req, res, next) => {
+  const q = `
+  SELECT * FROM user_league
+  JOIN leagues
+     ON leagueId=leagues.id
+  WHERE userId=? AND domainId=?
+  `;
+  connexion.query(q, [req.params.id, req.params.domainId], (error, results) => {
     if (error) return next(error);
-    return res.status(200).json(result);
+
+    return res.status(200).json({ data: results });
   });
 });
 
 module.exports = router;
-
-//get leagues of logedIn user
