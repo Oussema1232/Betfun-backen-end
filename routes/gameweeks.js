@@ -29,6 +29,8 @@ router.get("/:domainId", (req, res, next) => {
 router.get("/:seasonId/:domainId", (req, res, next) => {
   const q = `
   SELECT gameweeks.id as id,gameweeks.name as name FROM gameweeks 
+  join seasons on seasonId=seasons.id
+  join betfun_domains on domainId=betfun_domains.id
   WHERE seasonId=? AND  domainId=?
   `;
   connexion.query(
@@ -50,9 +52,12 @@ router.get("/:seasonId/:domainId", (req, res, next) => {
             [req.params.seasonId, req.params.domainId],
             (error, result) => {
               if (error) return next(error);
-              return res
-                .status(400)
-                .json({ message: "gameweeks of season", data: result });
+              if (!result[0])
+                return res.status(400).json({ message: "no gameweeks" });
+              return res.status(200).json({
+                message: "gameweeks of season",
+                data: result,
+              });
             }
           );
         }

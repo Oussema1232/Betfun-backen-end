@@ -120,9 +120,9 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 //create bet
-router.post("/", auth, (req, res, next) => {
-  if (req.body.userId != req.user.id)
-    return res.status(403).json({ message: "Access forbidden" });
+router.post("/", (req, res, next) => {
+  // if (req.body.userId != req.user.id)
+  //   return res.status(403).json({ message: "Access forbidden" });
   connexion.beginTransaction(function (err) {
     if (err) {
       return next(err);
@@ -203,7 +203,7 @@ router.put("/:betId", auth, (req, res, next) => {
 });
 
 //get bets of a specific user at specefic domain and a specefic season
-router.get("/:userId/:seasonId/:domainId", auth, (req, res, next) => {
+router.get("/:userId/:seasonId/:domainId",(req, res, next) => {
   const q = `
   SELECT * FROM bets 
   JOIN gameweeks 
@@ -250,7 +250,7 @@ router.get("/:userId/:seasonId/:domainId", auth, (req, res, next) => {
 });
 
 //get bet of a specific user at a specific gameweek at a specific season
-router.get("/:userId/:gameweekId", auth, (req, res, next) => {
+router.get("/:userId/:gameweekId",  (req, res, next) => {
   const q = `
       SELECT * FROM bets 
       JOIN gameweeks 
@@ -300,7 +300,8 @@ router.get("/:userId/:gameweekId", auth, (req, res, next) => {
 //get bets of specific user at specific domain (all season)
 router.get("/all/seasons/:userId/:domainId", (req, res, next) => {
   const q = `
-      SELECT bets.id as id ,gameweeks.name as gameweekname,seasonId,gameweeks.id as gameweekId,userId,gameweekId,bets.created_at,points,domainId FROM bets
+      SELECT bets.id as id ,gameweeks.name as gameweekname,seasonId,gameweeks.id as gameweekId,userId,gameweekId,bets.created_at,points,domainId,date_format(bets.created_at,'%d/%m/%y') as date,
+      date_format(bets.created_at,'%H:%i')  as time FROM bets
       JOIN gameweeks
       ON gameweeks.id=bets.gameweekId
       WHERE userId=? AND domainId=? ;
@@ -336,7 +337,7 @@ router.get("/all/seasons/:userId/:domainId", (req, res, next) => {
 });
 
 //get domains of specefic user
-router.get("/:userId", auth, (req, res, next) => {
+router.get("/:userId",  (req, res, next) => {
   const q = `
   SELECT domainId,name as domain_name, logo FROM user_domains
   JOIN betfun_domains ON id=domainId

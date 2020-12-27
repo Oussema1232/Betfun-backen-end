@@ -18,11 +18,39 @@ router.get("/", (req, res, next) => {
 //get seasons of specific domain
 router.get("/:domainId", (req, res, next) => {
   const q = `
-  SELECT seasons.id AS id , seasons.name AS name FROM seasons
+  SELECT seasons.id AS id , seasons.name AS name,isFinished FROM seasons
   JOIN gameweeks 
-  ON seasons.id=seasonId
-  WHERE domainId=?
-  GROUP BY seasonId;
+  ON seasons.id=gameweeks.seasonId
+  JOIN domain_seasonstatus 
+  ON seasons.id=domain_seasonstatus.seasonId
+  WHERE gameweeks.domainId=?
+  GROUP BY gameweeks.seasonId;
+  `;
+  connexion.query(
+    "SELECT * FROM betfun_domains WHERE id=?",
+    req.params.domainId,
+    (error, result) => {
+      if (error) return next(error);
+      if (!result[0])
+        return res.status(400).json({ message: "domain not found" });
+      connexion.query(q, req.params.domainId, (error, result) => {
+        if (error) return next(error);
+        return res
+          .status(200)
+          .json({ message: "seasons of domains", data: result });
+      });
+    }
+  );
+});
+//i did not use this because i used createselector in seasonSlice
+//get seasons of specific domain that are finished
+router.get("/finished/:domainId", (req, res, next) => {
+  const q = `
+  SELECT seasons.id AS id , seasons.name AS name FROM seasons
+  JOIN domain_seasonstatus 
+  ON seasons.id=domain_seasonstatus.seasonId
+  WHERE isFinished=true AND domain_seasonstatus.domainId=?
+  GROUP BY domain_seasonstatus.seasonId;
   `;
   connexion.query(
     "SELECT * FROM betfun_domains WHERE id=?",
