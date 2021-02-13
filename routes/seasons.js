@@ -22,7 +22,7 @@ router.get("/:domainId", (req, res, next) => {
   JOIN gameweeks 
   ON seasons.id=gameweeks.seasonId
   JOIN domain_seasonstatus 
-  ON seasons.id=domain_seasonstatus.seasonId
+  ON seasons.id=domain_seasonstatus.seasonId AND domain_seasonstatus.domainId=${req.params.domainId}
   WHERE gameweeks.domainId=?
   GROUP BY gameweeks.seasonId;
   `;

@@ -12,14 +12,15 @@ const router = express.Router();
 router.post("/", (req, res, next) => {
   // if (req.body.userId != req.user.id)
   //   return res.status(403).json({ message: "Access forbidden" });
-  if (!req.body.name) return res.status(400).send("must insert league name");
+  if (!req.body.name)
+    return res.status(400).send("The league must have a name");
   connexion.query(
     "SELECT * FROM betfun_domains WHERE id=?",
     req.body.domainId,
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "domain not found" });
+        return res.status(400).json({ message: "Domain not found" });
       connexion.query(
         "SELECT * FROM user_domains WHERE userId=? AND domainId=?",
         [req.body.userId, req.body.domainId],
@@ -28,11 +29,13 @@ router.post("/", (req, res, next) => {
           if (!result[0])
             return res
               .status(400)
-              .json({ message: "user is not registered at this domain" });
+              .json({ message: "You are not registered at this domain" });
           const code = nanoid(8);
           let newLeague = {
             name: req.body.name,
             code: code,
+            genreId: req.body.genreId,
+            seasonId: req.body.seasonId,
             domainId: req.body.domainId,
             creatorId: req.body.userId,
           };
@@ -89,8 +92,8 @@ router.post("/", (req, res, next) => {
 
 //join league
 router.post("/join", (req, res, next) => {
-  if (req.body.userId != req.user.id)
-    return res.status(403).json({ message: "Access forbidden" });
+  // if (req.body.userId != req.user.id)
+  //   return res.status(403).json({ message: "Access forbidden" });
   connexion.query(
     `SELECT * FROM leagues WHERE code=?`,
     req.body.code,
@@ -110,7 +113,7 @@ router.post("/join", (req, res, next) => {
           if (results[0])
             return res
               .status(400)
-              .json({ message: "you are already registred in this league" });
+              .json({ message: "You are already registred in this league" });
           connexion.query(
             `
           SELECT * FROM user_domains
@@ -124,7 +127,7 @@ router.post("/join", (req, res, next) => {
               if (!result[0])
                 return res
                   .status(400)
-                  .json({ message: "user not registered in this domain" });
+                  .json({ message: "You are not registered in this domain" });
               let q = `INSERT INTO user_league SET?`;
               let userleague = {
                 userId: req.body.userId,
@@ -157,24 +160,33 @@ router.delete("/", (req, res) => {
 //order of users in a specific league (and specific month) and specific season
 router.get("/rank/:leagueId/:seasonId/:month", (req, res, next) => {
   const q = `
-  Select users.id as userId,username,month_name,SUM(points) AS total_points FROM bets
+  Select users.id as userId,username,SUM(bets.points) AS total_points,month_name,seasons.name as seasonname FROM bets
   JOIN users
   ON bets.userId=users.id
   JOIN gameweeks
   ON gameweeks.id=bets.gameweekId
   JOIN user_league 
   ON user_league.userId=users.id
+  JOIN seasons 
+  ON gameweeks.seasonId=seasons.id
   WHERE month_name=? AND user_league.leagueId=? AND gameweeks.seasonId=? AND gameweeks.domainId=?
   GROUP BY bets.userId,month_name
   ORDER BY points DESC;
   `;
   connexion.query(
-    "SELECT * FROM leagues WHERE id=?",
+    `SELECT leagues.id as id,seasons.name as seasonname,leagues.name as name,seasonId,code,leagues.domainId as domainId FROM leagues
+    JOIN seasons 
+    ON leagues.seasonId=seasons.id
+    WHERE leagues.id=?`,
     req.params.leagueId,
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
         return res.status(400).json({ message: "league not found" });
+      if (result[0].seasonId != req.params.seasonId)
+        return res
+          .status(400)
+          .json({ message: "season not found for this league" });
       let league = result[0];
       connexion.query(
         "SELECT * FROM gameweeks WHERE domainId=? AND seasonId=?",
@@ -184,28 +196,70 @@ router.get("/rank/:leagueId/:seasonId/:month", (req, res, next) => {
           if (!result[0])
             return res.status(400).json({ message: "season not found" });
           connexion.query(
-            q,
-            [
-              req.params.month,
-              req.params.leagueId,
-              req.params.seasonId,
-              league.domainId,
-            ],
+            `
+        SELECT * FROM gameweeks
+        JOIN calendar_results
+        ON gameweeks.id=gameweekId
+        WHERE bingo IS NOT NULL AND month_name=? AND seasonId=? AND domainId=?
+        GROUP BY month_name
+        `,
+            [req.params.month, req.params.seasonId, league.domainId],
             (error, result) => {
               if (error) return next(error);
-              for (let i = 0; i < result.length; i++) {
-                if (
-                  i != 0 &&
-                  result[i].total_points == result[i - 1].total_points
-                ) {
-                  result[i].rank = i;
-                } else {
-                  result[i].rank = i + 1;
+              if (!result[0])
+                return res.status(400).json({ message: "month not found" });
+              connexion.query(
+                q,
+                [
+                  req.params.month,
+                  req.params.leagueId,
+                  req.params.seasonId,
+                  league.domainId,
+                ],
+                (error, result) => {
+                  if (error) return next(error);
+                  for (let i = 0; i < result.length; i++) {
+                    if (i == 0) {
+                      result[i].rank = i + 1;
+                    } else {
+                      if (
+                        result[i].total_points == result[i - 1].total_points
+                      ) {
+                        result[i].rank = result[i - 1].rank;
+                      } else {
+                        result[i].rank = i + 1;
+                      }
+                    }
+                  }
+                  const rank = result;
+                  const qr = `
+                   SELECT userId,users.username FROM user_league
+                   JOIN users
+                   ON userId=users.id
+                   WHERE leagueId=${req.params.leagueId}
+                   `;
+                  connexion.query(qr, (error, result) => {
+                    if (error) return next(error);
+                    let x = rank.length;
+                    for (let i = 0; i < result.length; i++) {
+                      const user = rank.filter(
+                        (el) => el.userId == result[i].userId
+                      );
+
+                      if (!user[0]) {
+                        result[i].total_points = 0;
+                        result[i].rank = x + 1;
+                        result[i].seasonname = league.seasonname;
+                        result[i].month = req.params.month;
+                        rank.push(result[i]);
+                      }
+                    }
+                    return res
+                      .status(200)
+                      .json({ message: "order of users", data: rank });
+                  });
                 }
-              }
-              return res
-                .status(200)
-                .json({ message: "order of users", data: result });
+              );
             }
           );
         }
@@ -217,29 +271,31 @@ router.get("/rank/:leagueId/:seasonId/:month", (req, res, next) => {
 //order of users in a specific league  and specific season
 router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
   const q = `
-  Select users.id as userId,username,SUM(bets.points) AS total_points,seasons.name as seasonname FROM bets
+  Select users.id as userId,username,SUM(bets.points) AS total_points,seasons.name AS seasonname FROM bets
   JOIN users
   ON bets.userId=users.id
   JOIN gameweeks
   ON gameweeks.id=bets.gameweekId
   JOIN user_league 
   ON user_league.userId=users.id
-  JOIN leagues 
-  ON user_league.leagueId=leagues.id
-  JOIN seasons 
-  ON seasons.id=leagues.seasonId
+  JOIN seasons
+  ON seasons.id=gameweeks.seasonId
   WHERE user_league.leagueId=? AND gameweeks.seasonId=? AND gameweeks.domainId=?
   GROUP BY bets.userId
   ORDER BY total_points DESC;
   `;
 
   connexion.query(
-    "SELECT * FROM leagues WHERE id=? AND seasonId=?",
-    [req.params.leagueId, req.params.seasonId],
+    "SELECT * FROM leagues WHERE id=?",
+    req.params.leagueId,
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
         return res.status(400).json({ message: "league not found" });
+      if (result[0].seasonId != req.params.seasonId)
+        return res
+          .status(400)
+          .json({ message: "season not found for this league" });
       let league = result[0];
       connexion.query(
         "SELECT * FROM gameweeks WHERE domainId=? AND seasonId=?",
@@ -253,34 +309,36 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
             [req.params.leagueId, req.params.seasonId, league.domainId],
             (error, result) => {
               if (error) return next(error);
-              if (!result[0])
-                return res
-                  .status(400)
-                  .json({ message: "this league is empty" });
-              if (
-                result[0].total_points == 0 ||
-                result[0].total_points == null
-              ) {
-                for (let i = 0; i < result.length; i++) {
-                  result[i].rank = "-";
-                }
-              } else {
-                for (let i = 0; i < result.length; i++) {
-                  if (
-                    i != 0 &&
-                    result[i].total_points == result[i - 1].total_points
-                  ) {
-                    result[i].rank = i;
+              for (let i = 0; i < result.length; i++) {
+                if (i == 0) {
+                  result[i].rank = i + 1;
+                } else {
+                  if (result[i].total_points == result[i - 1].total_points) {
+                    result[i].rank = result[i - 1].rank;
                   } else {
                     result[i].rank = i + 1;
                   }
                 }
               }
               const rank = result;
-
               connexion.query(
-                `
-            Select users.id as userId,username, bets.points AS GW_points,gameweeks.id AS gameweekId, gameweeks.name as gameweekname FROM bets
+                `SELECT * FROM calendar_results
+              JOIN gameweeks
+              ON gameweeks.id=gameweekId
+              WHERE bingo IS NOT NULL AND domainId=? AND seasonId=?
+              ORDER BY played_on DESC`,
+                [league.domainId, league.seasonId],
+                (error, result) => {
+                  if (error) return next(error);
+                  let gameweek = "-";
+                  let gameweekId = "";
+                  result[0]
+                    ? (gameweekId = result[0].gameweekId)
+                    : (gameweekId = null);
+                  result[0] ? (gameweek = result[0].name) : (gameweek = "-");
+                  connexion.query(
+                    `
+            Select users.id as userId,username, bets.points AS GW_points,gameweeks.id AS gameweekId, gameweeks.name FROM bets
             JOIN users
             ON bets.userId=users.id
             JOIN gameweeks
@@ -290,59 +348,96 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
             WHERE user_league.leagueId=? AND gameweeks.seasonId=? AND gameweeks.domainId=? AND points IS NOT NULL
             ORDER BY gameweeks.id DESC;
             `,
-                [req.params.leagueId, req.params.seasonId, league.domainId],
-                (error, result) => {
-                  if (error) return next(error);
-                  result = result.filter(
-                    (el) => el.gameweekname == result[0].gameweekname
-                  );
-                  for (let i = 0; i < rank.length; i++) {
-                    rank[i].GW_points = 0;
-                    rank[i].gameweekname = result[0].gameweekname;
-                    let userRank = result.filter(
-                      (el) => el.userId == rank[i].userId
-                    );
-                    if (userRank[0]) rank[i].GW_points = userRank[0].GW_points;
-                  }
-                  const qr = `
-                Select users.id as userId,username,SUM(bets.points) AS total_points,gameweeks.name as gameweekname FROM bets
+                    [req.params.leagueId, req.params.seasonId, league.domainId],
+                    (error, result) => {
+                      if (error) return next(error);
+                      if (result.length != 0)
+                        result = result.filter(
+                          (el) => el.gameweekId == gameweekId
+                        );
+                      for (let i = 0; i < rank.length; i++) {
+                        rank[i].GW_points = 0;
+                        rank[i].gameweek = gameweek;
+                        let userRank = result.filter(
+                          (el) => el.userId == rank[i].userId
+                        );
+                        if (userRank[0])
+                          rank[i].GW_points = userRank[0].GW_points;
+                      }
+                      const qr = `
+                Select users.id as userId,username,SUM(bets.points) AS total_points FROM bets
                 JOIN users
                 ON bets.userId=users.id
                 JOIN gameweeks
                 ON gameweeks.id=bets.gameweekId
                 JOIN user_league 
                 ON user_league.userId=users.id
-                WHERE user_league.leagueId=? AND gameweeks.seasonId=? AND gameweeks.domainId=? AND gameweeks.id <> ${result[0].gameweekId}
+                WHERE user_league.leagueId=? AND gameweeks.seasonId=? AND gameweeks.domainId=? AND gameweeks.id <> ${gameweekId}
                 GROUP BY bets.userId
                 ORDER BY total_points DESC;
                `;
-                  connexion.query(
-                    qr,
-                    [req.params.leagueId, req.params.seasonId, league.domainId],
-                    (error, result) => {
-                      for (let i = 0; i < result.length; i++) {
-                        if (
-                          i != 0 &&
-                          result[i].total_points == result[i - 1].total_points
-                        ) {
-                          result[i].rank = i;
-                        } else {
-                          result[i].rank = i + 1;
+                      connexion.query(
+                        qr,
+                        [
+                          req.params.leagueId,
+                          req.params.seasonId,
+                          league.domainId,
+                        ],
+                        (error, result) => {
+                          if (error) return next(error);
+                          for (let i = 0; i < result.length; i++) {
+                            if (i == 0) {
+                              result[i].rank = i + 1;
+                            } else {
+                              if (
+                                result[i].total_points ==
+                                result[i - 1].total_points
+                              ) {
+                                result[i].rank = result[i - 1].rank;
+                              } else {
+                                result[i].rank = i + 1;
+                              }
+                            }
+                          }
+                          for (let i = 0; i < rank.length; i++) {
+                            rank[i].oldRank = "-";
+                            let userRank = result.filter(
+                              (el) => el.userId == rank[i].userId
+                            );
+                            if (userRank[0]) rank[i].oldRank = userRank[0].rank;
+                          }
+                          const qr = `
+                 SELECT userId,users.username FROM user_league
+                 JOIN users
+                 ON userId=users.id
+                 WHERE leagueId=${req.params.leagueId}
+                 `;
+                          connexion.query(qr, (error, result) => {
+                            if (error) return next(error);
+                            let x = rank.length;
+                            for (let i = 0; i < result.length; i++) {
+                              const user = rank.filter(
+                                (el) => el.userId == result[i].userId
+                              );
+
+                              if (!user[0]) {
+                                result[i].total_points = 0;
+                                result[i].rank = x + 1;
+                                result[i].GW_points = 0;
+                                result[i].gameweek = gameweek;
+                                result[i].oldRank = "-";
+
+                                rank.push(result[i]);
+                              }
+                            }
+                            return res
+                              .status(200)
+                              .json({ message: "order of users", data: rank });
+                          });
                         }
-                      }
-                      for (let i = 0; i < rank.length; i++) {
-                        rank[i].oldRank = "-";
-                        let userRank = result.filter(
-                          (el) => el.userId == rank[i].userId
-                        );
-                        if (userRank[0]) rank[i].oldRank = userRank[0].rank;
-                      }
-                      return res
-                        .status(200)
-                        .json({ message: "order of users", data: rank });
+                      );
                     }
                   );
-                  //return res.status(200).json({message:'order of users',data:rank});
                 }
               );
             }
@@ -357,13 +452,15 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
 
 router.get("/:userId/:domainId", (req, res, next) => {
   const q = `
-  SELECT leagues.id as leagueId, leagues.name as name, created_at,genreId,seasonId,date_format(created_at,'%y/%m/%d') as date,
-  date_format(created_at,'%H:%i')  as time FROM user_league
+  SELECT leagues.id as leagueId, leagues.name as name, created_at,genreId,leagues.seasonId AS seasonId,date_format(created_at,'%y/%m/%d') as date,
+   date_format(created_at,'%H:%i')  as time FROM user_league
   JOIN leagues
      ON leagueId=leagues.id
+  JOIN domain_seasonstatus 
+     ON domain_seasonstatus.seasonId=leagues.seasonId
   JOIN leagues_genres
      ON leagues_genres.id=leagues.genreId
-  WHERE userId=? AND domainId=?
+  WHERE userId=${req.params.userId} AND leagues.domainId=${req.params.domainId} AND domain_seasonstatus.domainId=${req.params.domainId} AND isfinished=false
   `;
   connexion.query(
     "SELECT * FROM users WHERE id=?",
@@ -388,19 +485,14 @@ router.get("/:userId/:domainId", (req, res, next) => {
                 return res
                   .status(400)
                   .json({ message: "user not registered in this domain" });
-              connexion.query(
-                q,
-                [req.params.userId, req.params.domainId],
-                (error, results) => {
-                  if (error) return next(error);
-                  if (!results[0])
-                    return res
-                      .status(200)
-                      .json({ message: "leagues not found" });
-                  const leagues = results;
-                  let qr = "";
-                  leagues.forEach((league) => {
-                    qr += `
+              connexion.query(q, (error, results) => {
+                if (error) return next(error);
+                if (!results[0])
+                  return res.status(400).json({ message: "leagues not found" });
+                const leagues = results;
+                let qr = "";
+                leagues.forEach((league) => {
+                  qr += `
                   Select users.id as userId,username,SUM(bets.points) AS total_points FROM bets
                   JOIN users
                   ON bets.userId=users.id
@@ -412,46 +504,64 @@ router.get("/:userId/:domainId", (req, res, next) => {
                   GROUP BY bets.userId
                   ORDER BY total_points DESC;
                 `;
-                  });
-                  connexion.query(
-                    qr + "SELECT 1 WHERE 1=2",
-                    (error, result) => {
-                      if (error) return next(error);
-                      result.pop();
-                      for (let i = 0; i < result.length; i++) {
-                        for (let j = 0; j < result[i].length; j++) {
-                          if (j == 0) {
-                            result[i][j].rank = 1;
-                          } else {
-                            if (
-                              result[i][j].total_points ==
-                              result[i][j - 1].total_points
-                            ) {
-                              result[i][j].rank = result[i][j - 1].rank;
-                            } else {
-                              result[i][j].rank = j + 1;
-                            }
-                          }
+                });
+                connexion.query(qr + "SELECT 1 WHERE 1=2", (error, result) => {
+                  if (error) return next(error);
+                  result.pop();
+                  for (let i = 0; i < result.length; i++) {
+                    for (let j = 0; j < result[i].length; j++) {
+                      if (j == 0) {
+                        result[i][j].rank = 1;
+                      } else {
+                        if (
+                          result[i][j].total_points ==
+                          result[i][j - 1].total_points
+                        ) {
+                          result[i][j].rank = result[i][j - 1].rank;
+                        } else {
+                          result[i][j].rank = j + 1;
                         }
                       }
-                      let rank = result;
+                    }
+                  }
+                  let rank = result;
+                  connexion.query(
+                    `SELECT * FROM calendar_results
+                    JOIN gameweeks
+                    ON gameweeks.id=gameweekId
+                    WHERE bingo IS NOT NULL AND domainId=? AND seasonId=?
+                    ORDER BY played_on DESC`,
+                    [req.params.domainId, leagues[0].seasonId],
+                    (error, result) => {
+                      if (error) return next(error);
+                      let gameweek = "-";
+                      let gameweekId = "";
+                      result[0]
+                        ? (gameweekId = result[0].gameweekId)
+                        : (gameweekId = null);
+                      result[0]
+                        ? (gameweek = result[0].name)
+                        : (gameweek = "-");
                       connexion.query(
                         `
-                  SELECT userId,gameweeks.name AS gameweek,gameweekId,points
+                  SELECT userId,gameweeks.name,gameweekId,points
                   FROM gameweeks
                   JOIN bets
                   ON gameweeks.id=bets.gameweekId
-                  WHERE gameweeks.domainId=${req.params.domainId}
+                  WHERE domainId=${req.params.domainId}
                   ORDER BY gameweekId DESC
                   `,
                         (error, result) => {
                           if (error) return next(error);
+
                           for (let i = 0; i < rank.length; i++) {
                             for (let j = 0; j < rank[i].length; j++) {
                               rank[i][j].GW_points = 0;
-                              rank[i][j].gameweek = result[0].gameweek;
+                              rank[i][j].gameweek = gameweek;
                               let gmPoint = result.filter(
-                                (el) => el.userId == rank[i][j].userId
+                                (el) =>
+                                  el.userId == rank[i][j].userId &&
+                                  el.gameweekId == gameweekId
                               );
                               if (gmPoint[0])
                                 rank[i][j].GW_points = gmPoint[0].points;
@@ -467,7 +577,7 @@ router.get("/:userId/:domainId", (req, res, next) => {
                       ON gameweeks.id=bets.gameweekId
                       JOIN user_league 
                       ON user_league.userId=users.id
-                      WHERE user_league.leagueId=${league.leagueId} AND gameweeks.seasonId=${league.seasonId} AND gameweeks.domainId=${req.params.domainId} AND gameweeks.id <> ${result[0].gameweekId}
+                      WHERE user_league.leagueId=${league.leagueId} AND gameweeks.seasonId=${league.seasonId} AND gameweeks.domainId=${req.params.domainId} AND gameweeks.id <> ${gameweekId}
                       GROUP BY bets.userId
                       ORDER BY total_points DESC;
                     `;
@@ -507,7 +617,7 @@ router.get("/:userId/:domainId", (req, res, next) => {
                                 leagues[i].userPoint = "-";
                                 leagues[i].userRank = "-";
                                 leagues[i].oldRank = "-";
-                                leagues[i].rank = rank[i];
+
                                 let userdata = rank[i].filter(
                                   (el) => el.userId == req.params.userId
                                 );
@@ -518,17 +628,31 @@ router.get("/:userId/:domainId", (req, res, next) => {
                                   leagues[i].oldRank = userdata[0].oldRank;
                                 }
                               }
-                              return res
-                                .status(200)
-                                .json({ message: "leagues", data: leagues });
+                              connexion.query(
+                                `
+                      SELECT month_name FROM gameweeks
+                      JOIN calendar_results
+                      ON gameweeks.id=gameweekId
+                      WHERE domainId=${req.params.domainId} AND seasonId=${leagues[0].seasonId} AND bingo IS NOT NULL
+                      GROUP BY gameweeks.month_name
+                      `,
+                                (error, result) => {
+                                  if (error) return next(error);
+                                  leagues[0].months = result;
+                                  return res.status(200).json({
+                                    message: "leagues",
+                                    data: leagues,
+                                  });
+                                }
+                              );
                             }
                           );
                         }
                       );
                     }
                   );
-                }
-              );
+                });
+              });
             }
           );
         }
@@ -546,9 +670,13 @@ router.get("/:leagueId", (req, res, next) => {
       if (error) return next(error);
       if (!result[0])
         return res.status(400).json({ message: "league not found" });
-      if (req.user.id != result[0].creatorId)
-        return res.status(403).json({ message: "Access forbidden" });
-      res.status(200).json({ messge: "code", data: result[0].code });
+      // if (req.user.id != result[0].creatorId)
+      //   return res
+      //     .status(403)
+      //     .json({
+      //       message: "Only the creator of this league can get the code",
+      //     });
+      return res.status(200).json({ message: "code", data: result[0].code });
     }
   );
 });

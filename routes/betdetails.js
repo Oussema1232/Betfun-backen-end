@@ -7,7 +7,7 @@ const router = express.Router();
 //get all details of a specific bet
 router.get("/:betId", (req, res, next) => {
   const q = `
-  SELECT teams1.name AS team1,teams2.name AS team2,teams1.logo as team1logo,teams2.logo as team2logo, guess,bingo,cote_x,cote_1,cote_2,goals1,goals2,CONCAT(goals1,"-",goals2) AS score,date_format(played_on,'%y/%m/%d') as day,
+  SELECT teams1.name AS team1,teams2.name AS team2,teams1.logo as team1logo,teams2.logo as team2logo, guess,bingo,cote_x,cote_1,cote_2,goals1,goals2,CONCAT(goals1,"-",goals2) AS score,played_on,date_format(played_on,'%y/%m/%d') as day,
   date_format(played_on,'%H:%i') as time,idBet,idMatch,gameweeks.name as gameweekname FROM betdetails
   JOIN calendar_results
   ON idMatch=calendar_results.id

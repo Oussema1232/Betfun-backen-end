@@ -5,7 +5,7 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 //get all points of a specific user at a specific season and specific domain
-router.get("/points/:id/:seasonId/:domainId", auth, (req, res, next) => {
+router.get("/points/:id/:seasonId/:domainId", (req, res, next) => {
   const q = `
     Select username,SUM(points) AS total_points FROM bets
     JOIN gameweeks 
@@ -25,7 +25,7 @@ router.get("/points/:id/:seasonId/:domainId", auth, (req, res, next) => {
 });
 
 //get all points of a specific user at a specific gameweek
-router.get("/points/:id/:gameweekId", auth, (req, res, next) => {
+router.get("/points/:id/:gameweekId", (req, res, next) => {
   const q = `
     Select username,SUM(points) AS total_points FROM bets
     JOIN gameweeks 
@@ -45,7 +45,7 @@ router.get("/points/:id/:gameweekId", auth, (req, res, next) => {
 });
 
 //order of users based on points at a specific gameweek at a specific season and specific domain
-router.get("/order/:seasonId/:gameweek/:domainId", auth, (req, res, next) => {
+router.get("/order/:seasonId/:gameweek/:domainId", (req, res, next) => {
   const q = `
         Select username,points FROM bets
         JOIN gameweeks 
@@ -88,7 +88,7 @@ router.get("/order/:seasonId/:domainId", (req, res, next) => {
 });
 
 //order of users based on total of points at specific domain (all season)
-router.get("/order/:domainId", auth, (req, res, next) => {
+router.get("/order/:domainId", (req, res, next) => {
   const q = `
         SELECT username,SUM(points) AS total_points FROM bets
         JOIN gameweeks 
@@ -107,7 +107,7 @@ router.get("/order/:domainId", auth, (req, res, next) => {
 
 //order of users based on points on specific month at a specific season at specific domain
 
-router.get("/monthrank/:month/:seasonId/:domainId", auth, (req, res) => {
+router.get("/monthrank/:month/:seasonId/:domainId", (req, res) => {
   const q = `
         Select username,month_name,SUM(points) AS total_points FROM bets
         JOIN users

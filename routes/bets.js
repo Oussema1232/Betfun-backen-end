@@ -137,7 +137,16 @@ router.post("/", (req, res, next) => {
           });
         }
 
-        if (result[0]) return res.status(400).send("bet already created");
+        if (result[0])
+          return res.status(400).json({ message: "Bet already created" });
+        let betDetails = req.body.betdetails;
+        for (let i = 0; i < betDetails.length; i++) {
+          if (betDetails[i][1] == "")
+            return res
+              .status(400)
+              .json({ message: "You should bet on all matches" });
+        }
+
         connexion.query(
           "INSERT INTO bets SET ?",
           { userId: req.body.userId, gameweekId: req.body.gameweekId },
@@ -147,8 +156,6 @@ router.post("/", (req, res, next) => {
                 return next(err);
               });
             }
-
-            let betDetails = req.body.betdetails;
 
             for (let i = 0; i < betDetails.length; i++) {
               betDetails[i].push(resultat.insertId);
@@ -203,7 +210,7 @@ router.put("/:betId", auth, (req, res, next) => {
 });
 
 //get bets of a specific user at specefic domain and a specefic season
-router.get("/:userId/:seasonId/:domainId",(req, res, next) => {
+router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
   const q = `
   SELECT * FROM bets 
   JOIN gameweeks 
@@ -250,7 +257,7 @@ router.get("/:userId/:seasonId/:domainId",(req, res, next) => {
 });
 
 //get bet of a specific user at a specific gameweek at a specific season
-router.get("/:userId/:gameweekId",  (req, res, next) => {
+router.get("/:userId/:gameweekId", (req, res, next) => {
   const q = `
       SELECT * FROM bets 
       JOIN gameweeks 
@@ -337,7 +344,7 @@ router.get("/all/seasons/:userId/:domainId", (req, res, next) => {
 });
 
 //get domains of specefic user
-router.get("/:userId",  (req, res, next) => {
+router.get("/:userId", (req, res, next) => {
   const q = `
   SELECT domainId,name as domain_name, logo FROM user_domains
   JOIN betfun_domains ON id=domainId

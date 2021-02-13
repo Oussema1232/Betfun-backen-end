@@ -21,12 +21,16 @@ const confirmmail = require("../routes/confirmmail");
 const sendverificationmail = require("../routes/sendverificationmail");
 const emailresetverification = require("../routes/emailresetverification");
 const resetpassword = require("../routes/resetpassword");
+const accuracy = require("../routes/accuracy");
+const efficiency = require("../routes/efficiency");
 const error = require("../middleware/error");
 
 module.exports = function (app) {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(express.static("public"));
+  app.use("/api/accuracy", accuracy);
+  app.use("/api/efficiency", efficiency);
   app.use("/api/leagues", leagues);
   app.use("/api/seasons", seasons);
   app.use("/api/betdomains", betdomains);
