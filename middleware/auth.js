@@ -9,6 +9,6 @@ module.exports = function (req, res, next) {
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(400).send("invalid token");
+    res.status(400).json({ message: "You are not signed in" });
   }
 };

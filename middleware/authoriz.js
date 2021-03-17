@@ -1,4 +1,7 @@
 module.exports = function (req, res, next) {
-  if (!req.user.isAdmin) return res.status(403).send("Access forbidden");
+  if (!req.user.isAdmin)
+    return res
+      .status(403)
+      .json({ message: "Access forbidden, you are not an admin user" });
   next();
 };

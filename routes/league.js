@@ -452,7 +452,7 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
 
 router.get("/:userId/:domainId", (req, res, next) => {
   const q = `
-  SELECT leagues.id as leagueId, leagues.name as name, created_at,genreId,leagues.seasonId AS seasonId,date_format(created_at,'%y/%m/%d') as date,
+  SELECT leagues.id as leagueId, leagues.name as name,creatorId, created_at,genreId,leagues.seasonId AS seasonId,date_format(created_at,'%y/%m/%d') as date,
    date_format(created_at,'%H:%i')  as time FROM user_league
   JOIN leagues
      ON leagueId=leagues.id
@@ -680,5 +680,119 @@ router.get("/:leagueId", (req, res, next) => {
     }
   );
 });
+
+//Admin
+//create new country league
+router.post(
+  "/admin/",
+  // , [auth, authoriz]
+  (req, res, next) => {
+    if (!req.body.countryId)
+      return res.status(400).json({ message: "countryId is required " });
+    if (!req.body.domainId)
+      return res.status(400).json({ message: "domainId is required " });
+    if (!req.body.seasonId)
+      return res.status(400).json({ message: "seasonId is required " });
+    connexion.query(
+      "SELECT * FROM countries WHERE id=?",
+      req.body.countryId,
+      (error, result) => {
+        if (error) return next(error);
+        if (!result[0])
+          return res.status(400).json({ message: "country not found" });
+        let country = result[0];
+        connexion.query(
+          "SELECT * FROM betfun_domains WHERE id=?",
+          req.body.domainId,
+          (error, result) => {
+            if (error) return next(error);
+            if (!result[0])
+              return res.status(400).json({ message: "domain not found" });
+            connexion.query(
+              "SELECT * FROM seasons WHERE id=?",
+              req.body.seasonId,
+              (error, result) => {
+                if (error) return next(error);
+                if (!result[0])
+                  return res.status(400).json({ message: "season not found" });
+                connexion.query(
+                  "SELECT * FROM leagues WHERE domainId=? AND countryId=?",
+                  [req.body.domainId, req.body.countryId],
+                  (error, result) => {
+                    if (error) return next(error);
+                    if (result[0])
+                      return res
+                        .status(400)
+                        .json({ message: "league already exist" });
+                    connexion.query(
+                      'SELECT * FROM leagues_genres WHERE name="public"',
+                      (error, result) => {
+                        if (error) return next(error);
+                        let newLeague = {
+                          name: country.name,
+                          domainId: req.body.domainId,
+                          seasonId: req.body.seasonId,
+                          genreId: result[0].id,
+                          countryId: req.body.countryId,
+                        };
+                        connexion.query(
+                          "INSERT INTO leagues SET ?",
+                          newLeague,
+                          (error, result) => {
+                            if (error) return next(error);
+                            return res
+                              .status(200)
+                              .json({ message: "league created successfully" });
+                          }
+                        );
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+  }
+);
+
+// update leagues
+router.put(
+  "/:leagueId",
+  // , [auth, authoriz]
+  (req, res, next) => {
+    connexion.query(
+      "SELECT * FROM leagues WHERE id=?",
+      req.params.leagueId,
+      (error, result) => {
+        if (error) return next(error);
+        if (!result[0])
+          return res.status(400).json({ message: "league not found" });
+        connexion.query(
+          "SELECT * FROM seasons WHERE id=?",
+          req.body.seasonId,
+          (error, result) => {
+            if (error) return next(error);
+            if (!result[0])
+              return res.status(400).json({ message: "season not found" });
+            let q = `
+          UPDATE leagues SET
+          seasonId=${req.body.seasonId}
+          WHERE id=${req.params.leagueId}
+          `;
+            connexion.query(q, (error, result) => {
+              if (error) return next(error);
+              return res
+                .status(200)
+                .json({ message: "league updated successfully" });
+            });
+          }
+        );
+      }
+    );
+  }
+);
 
 module.exports = router;

@@ -30,7 +30,7 @@ router.get("/:email", async (req, res, next) => {
         requireTLS: true,
         auth: {
           user: "betfuncompany@gmail.com",
-          pass: "Soltan&7tombetfun1.",
+          pass: "Soltan&7tombetfuncompany1.",
         },
         tls: {
           rejectUnauthorized: false,

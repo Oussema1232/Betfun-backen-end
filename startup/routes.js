@@ -17,6 +17,7 @@ const home = require("../routes/home");
 const points = require("../routes/points");
 const ranks = require("../routes/ranks");
 const countries = require("../routes/countries");
+const teams = require("../routes/teams");
 const confirmmail = require("../routes/confirmmail");
 const sendverificationmail = require("../routes/sendverificationmail");
 const emailresetverification = require("../routes/emailresetverification");
@@ -33,6 +34,7 @@ module.exports = function (app) {
   app.use("/api/efficiency", efficiency);
   app.use("/api/leagues", leagues);
   app.use("/api/seasons", seasons);
+  app.use("/api/teams", teams);
   app.use("/api/betdomains", betdomains);
   app.use("/api/userdomains", userdomains);
   app.use("/api/communities", communities);

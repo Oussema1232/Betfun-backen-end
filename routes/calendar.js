@@ -3,28 +3,6 @@ const connexion = require("../startup/database");
 const auth = require("../middleware/auth");
 const router = express.Router();
 
-//get gameweeks of specific domains
-router.get("/:domainId", (req, res, next) => {
-  const q = `
-  SELECT * FROM gameweeks 
-  join seasons on seasonId=seasons.id
-  WHERE domainId=?
-  `;
-  connexion.query(
-    "SELECT * FROM betfun_domains WHERE id=?",
-    req.params.domainId,
-    (error, result) => {
-      if (error) return next(error);
-      if (!result[0])
-        return res.status(400).json({ message: "domain not found" });
-      connexion.query(q, req.params.domainId, (error, results) => {
-        if (error) return next(error);
-        return res.status(200).json({ message: "gameweeks", data: results });
-      });
-    }
-  );
-});
-
 //get matches season domain special format
 router.get("/matches/:seasonId/:domainId", (req, res, next) => {
   connexion.query(
@@ -50,6 +28,7 @@ router.get("/matches/:seasonId/:domainId", (req, res, next) => {
             q += `SELECT date_format(played_on,'%y/%m/%d') as day FROM calendar_results 
               WHERE gameweekId=${result[i].id}
               GROUP BY day
+              
               ;`;
             qr += `SELECT 
             CONCAT(teams1.name," vs ",teams2.name) AS matchs,
@@ -60,8 +39,12 @@ router.get("/matches/:seasonId/:domainId", (req, res, next) => {
                         teams1.logo as team1logo,
                         teams2.logo as team2logo,
                         calendar_results.id as idMatch,
+                        cote_1,
+                        cote_x,
+                        cote_2,
                         bingo,
-                         played_on,
+                        date_format(played_on,'%Y-%m-%d %H:%I:%S') as played_on,
+                         
                          date_format(played_on,'%y/%m/%d') as day,
                          date_format(played_on,'%H:%i') as time,
                          gameweeks.name as gameweekname,
@@ -75,7 +58,9 @@ router.get("/matches/:seasonId/:domainId", (req, res, next) => {
                   ON teams2.id=team2Id
                   JOIN gameweeks 
                   On gameweeks.id=calendar_results.gameweekId
-             WHERE gameweekId=${result[i].id};`;
+             WHERE gameweekId=${result[i].id}
+             ORDER BY played_on ASC;
+             `;
           }
           connexion.query(q, (error, result) => {
             if (error) return next(error);
@@ -383,5 +368,201 @@ router.get("/teamfixtures/:teamId", auth, (req, res) => {
     }
   );
 });
+
+//admin
+//add new match
+router.post(
+  "/",
+  // ,[auth,authoriz]
+  (req, res, next) => {
+    if (!req.body.team1Id)
+      return res.status(400).json({ message: "team1Id is required" });
+    if (!req.body.team2Id)
+      return res.status(400).json({ message: "team2Id is required" });
+    if (req.body.team2Id == req.body.team1Id)
+      return res.status(400).json({ message: "teams should be different" });
+
+    if (!req.body.gameweekId)
+      return res.status(400).json({ message: "gameweekId is required" });
+    if (!req.body.played_on)
+      return res.status(400).json({ message: "played_on is required" });
+    if (!req.body.cote_1)
+      return res.status(400).json({ message: "cote_1 is required" });
+    if (!req.body.cote_2)
+      return res.status(400).json({ message: "cote_2 is required" });
+    if (!req.body.cote_x)
+      return res.status(400).json({ message: "cote_x is required" });
+    connexion.query(
+      "SELECT * FROM gameweeks WHERE id=?",
+      req.body.gameweekId,
+      (error, result) => {
+        if (error) return next(error);
+        if (!result[0])
+          return res.status(400).json({ message: "gameweek not found" });
+        let gameweek = result[0];
+        connexion.query(
+          "SELECT * FROM teams WHERE id=?",
+          req.body.team1Id,
+          (error, result) => {
+            if (error) return next(error);
+            if (!result[0])
+              return res.status(400).json({ message: "team1 not found" });
+            if (result[0].domainId != gameweek.domainId)
+              return res
+                .status(400)
+                .json({ message: "invalid domain for team1" });
+            connexion.query(
+              "SELECT * FROM teams WHERE id=?",
+              req.body.team2Id,
+              (error, result) => {
+                if (error) return next(error);
+                if (!result[0])
+                  return res.status(400).json({ message: "team2 not found" });
+                if (result[0].domainId != gameweek.domainId)
+                  return res
+                    .status(400)
+                    .json({ message: "invalid domain for team2" });
+                let match = {
+                  team1Id: req.body.team1Id,
+                  team2Id: req.body.team2Id,
+                  gameweekId: req.body.gameweekId,
+                  played_on: req.body.played_on,
+                  cote_1: req.body.cote_1,
+                  cote_2: req.body.cote_2,
+                  cote_x: req.body.cote_x,
+                };
+                connexion.query(
+                  "INSERT INTO calendar_results SET ?",
+                  match,
+                  (error, result) => {
+                    if (error) return next(error);
+                    return res
+                      .status(200)
+                      .json({ message: "match created successfully" });
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+  }
+);
+
+//update match
+router.put(
+  "/:matchId",
+  // ,[auth,authoriz]
+  (req, res, next) => {
+    connexion.query(
+      "SELECT * FROM calendar_results WHERE id=?",
+      req.params.matchId,
+      (error, result) => {
+        if (error) return next(error);
+        if (!result[0])
+          return res.status(400).json({ message: "match not found" });
+        if (req.body.goals1 && req.body.goals2) {
+        }
+        let match = result[0];
+        let team1Id = req.body.team1Id || match.team1Id;
+        let team2Id = req.body.team2Id || match.team2Id;
+        let gameweekId = req.body.gameweekId || match.gameweekId;
+        let played_on = req.body.played_on || match.played_on;
+        let cote_1 = req.body.cote_1 || match.cote_1;
+        let cote_2 = req.body.cote_2 || match.cote_2;
+        let cote_x = req.body.cote_x || match.cote_x;
+        let bingo = req.body.bingo || match.bingo;
+        let goals1 = req.body.goals1 || match.goals1;
+        let goals2 = req.body.goals2 || match.goals2;
+        connexion.query(
+          "SELECT * FROM gameweeks WHERE id=?",
+          gameweekId,
+          (error, result) => {
+            if (error) return next(error);
+            if (!result[0])
+              return res.status(400).json({ message: "gameweek not found" });
+            let gameweek = result[0];
+            connexion.query(
+              "SELECT * FROM teams WHERE id=?",
+              team1Id,
+              (error, result) => {
+                if (error) return next(error);
+                if (!result[0])
+                  return res.status(400).json({ message: "team1 not found" });
+                if (result[0].domainId != gameweek.domainId)
+                  return res
+                    .status(400)
+                    .json({ message: "invalid domain for team1" });
+                connexion.query(
+                  "SELECT * FROM teams WHERE id=?",
+                  team2Id,
+                  (error, result) => {
+                    if (error) return next(error);
+                    if (!result[0])
+                      return res
+                        .status(400)
+                        .json({ message: "team2 not found" });
+                    if (result[0].domainId != gameweek.domainId)
+                      return res
+                        .status(400)
+                        .json({ message: "invalid domain for team2" });
+                    let q = `
+                  UPDATE calendar_results SET
+                  team1Id=${team1Id},
+                  team2Id=${team2Id},
+                  gameweekId=${gameweekId},
+                  played_on="${played_on}",
+                  cote_1=${cote_1},
+                  cote_2=${cote_2},
+                  cote_x=${cote_x},
+                  bingo=${bingo ? `"${bingo}"` : null},
+                  goals1=${goals1},
+                  goals2=${goals2}
+                  WHERE id=${req.params.matchId}
+                  `;
+                    connexion.query(q, (error, result) => {
+                      if (error) return next(error);
+                      return res
+                        .status(200)
+                        .json({ message: "match updated successfully" });
+                    });
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+  }
+);
+
+//delete match
+router.delete(
+  "/:matchId",
+  // ,[auth,authoriz]
+  (req, res, next) => {
+    connexion.query(
+      "SELECT * FROM calendar_results WHERE id=?",
+      req.params.matchId,
+      (error, result) => {
+        if (error) return next(error);
+        if (!result[0])
+          return res.status(400).json({ message: "match not found" });
+        connexion.query(
+          "DELETE FROM calendar_results WHERE id=?",
+          req.params.matchId,
+          (error, result) => {
+            if (error) return next(error);
+            return res
+              .status(200)
+              .json({ message: "match deleted successfully" });
+          }
+        );
+      }
+    );
+  }
+);
 
 module.exports = router;

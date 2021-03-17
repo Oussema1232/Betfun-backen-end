@@ -11,4 +11,4 @@ module.exports = multer({
     }
     cb(null, true);
   },
-}).single("image");
+}).single("file");

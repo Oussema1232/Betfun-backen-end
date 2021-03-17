@@ -220,7 +220,8 @@ router.get("/kings/:seasonId/:domainId", (req, res, next) => {
                 seasonkings(req.params.seasonId),
                 (error, result) => {
                   if (error) return next(error);
-
+                  if (!result[0])
+                    return res.status(400).json({ message: "no bets" });
                   connexion.query(
                     `
         SELECT * FROM seasons
@@ -232,6 +233,10 @@ router.get("/kings/:seasonId/:domainId", (req, res, next) => {
                     req.params.domainId,
                     (error, result) => {
                       if (error) return next(error);
+                      if (!result[0])
+                        return res
+                          .status(400)
+                          .json({ message: "season not found" });
                       let q = "";
                       for (let i = 0; i < result.length; i++) {
                         q += seasonkings(result[i].seasonId);
@@ -241,6 +246,10 @@ router.get("/kings/:seasonId/:domainId", (req, res, next) => {
                         q + "SELECT 1 WHERE 1=0",
                         (error, result) => {
                           if (error) return next(error);
+                          if (!result[0])
+                            return res
+                              .status(400)
+                              .json({ message: "season not found" });
                           result = result.filter((el) => el.length != 0);
 
                           const kings = result.filter(

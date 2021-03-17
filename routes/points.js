@@ -32,7 +32,7 @@ router.post("/", (req, res, next) => {
                 ON idBet=bets.id
                 JOIN calendar_results
                 ON idMatch=calendar_results.id
-                WHERE gameweekId=${req.body.gameweekId}
+                WHERE calendar_results.gameweekId=${req.body.gameweekId}
                 GROUP BY idBet`;
 
       connexion.query(q, function (err, results, fields) {
@@ -41,7 +41,7 @@ router.post("/", (req, res, next) => {
             return next(err);
           });
         }
-        console.log("this is sparta", results);
+
         let q = insertpoints(results);
         connexion.query(q, function (err, results, fields) {
           if (err) {
