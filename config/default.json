@@ -3,9 +3,9 @@
   "emailsecret": "emailsecret",
   "emailpassword": "emailpassword",
   "dbinfo": {
-    "host": "us-cdbr-east-03.cleardb.com",
-    "user": "databaseusername",
-    "password": "databasepassword",
+    "host": "host",
+    "user": "user",
+    "password": "password",
     "database": "heroku_944775d9123c355",
     "multipleStatements": true
   },
