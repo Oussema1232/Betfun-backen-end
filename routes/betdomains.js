@@ -6,7 +6,7 @@ const cloudinary = require("../startup/cloudinaryconfig");
 const upload = require("../middleware/multer");
 const router = express.Router();
 
-router.get("/",  (req, res, next) => {
+router.get("/", (req, res, next) => {
   connexion.query(
     `SELECT id, domainname as name, logo FROM betfun_domains`,
     function (err, results) {
@@ -16,7 +16,7 @@ router.get("/",  (req, res, next) => {
         return res
           .status(400)
           .json({ message: "There are no domains available" });
-      res
+      return res
         .status(200)
         .json({ data: results, message: "domains loaded successfully" });
     }

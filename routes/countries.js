@@ -12,7 +12,7 @@ router.get("/", (req, res, next) => {
 
     if (!results[0])
       return res.status(400).send("There are no countries available");
-    res
+    return res
       .status(200)
       .json({ data: results, message: "Countries loaded successfully" });
   });
