@@ -1,17 +1,17 @@
 {
-  "secretkey": "secretkey",
-  "emailsecret": "emailsecret",
-  "emailpassword": "emailpassword",
+  "secretkey": "",
+  "emailsecret": "",
+  "emailpassword": "",
   "dbinfo": {
-    "host": "host",
-    "user": "user",
-    "password": "password",
+    "host": "",
+    "user": "",
+    "password": "",
     "database": "heroku_944775d9123c355",
     "multipleStatements": true
   },
   "cloudinaryconfig": {
-    "cloud_name": "cloud_name",
-    "api_key": "api_key",
-    "api_secret": "api_secret"
+    "cloud_name": "",
+    "api_key": "",
+    "api_secret": ""
   }
 }
