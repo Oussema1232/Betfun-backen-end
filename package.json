@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest --watchAll --verbose",
-    "start": "node start app.js"
+    "start": "node app.js"
   },
   "engines": {
     "node": "12.16.1"
