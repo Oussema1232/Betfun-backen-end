@@ -1,11 +1,11 @@
 {
   "secretkey": "secretkey",
   "emailsecret": "emailsecret",
-  "emailpassword":"emailpassword",
+  "emailpassword": "emailpassword",
   "dbinfo": {
     "host": "localhost",
     "user": "root",
-    "password": "Oussema1.",
+    "password": "databasepassword",
     "database": "betfun_db",
     "multipleStatements": true
   },
