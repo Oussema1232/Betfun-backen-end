@@ -1,8 +1,10 @@
 {
   "secretkey": "betfun_secretkey",
   "emailsecret": "betfun_emailsecret",
-  "emailpassword":"emailpassword",
-  "databasepassword":"databasepassword",
+  "emailpassword": "emailpassword",
+  "databasehost": "databasehost",
+  "databaseusername": "databaseusername",
+  "databasepassword": "databasepassword",
   "cloud_name": "cloud_name",
   "api_key": "api_key",
   "api_secret": "api_secret"

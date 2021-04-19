@@ -3,10 +3,10 @@
   "emailsecret": "emailsecret",
   "emailpassword": "emailpassword",
   "dbinfo": {
-    "host": "localhost",
-    "user": "root",
+    "host": "databasehost",
+    "user": "databaseusername",
     "password": "databasepassword",
-    "database": "betfun_db",
+    "database": "heroku_944775d9123c355",
     "multipleStatements": true
   },
   "cloudinaryconfig": {
