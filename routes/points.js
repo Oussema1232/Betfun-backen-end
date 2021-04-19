@@ -3,9 +3,10 @@ const updatefunc = require("../querry/updatefunction");
 const insertpoints = require("../querry/insertpoints");
 const connexion = require("../startup/database");
 const auth = require("../middleware/auth");
+const authoriz = require("../middleware/authoriz");
 const router = express.Router();
 
-router.post("/", (req, res, next) => {
+router.post("/", [auth, authoriz], (req, res, next) => {
   let matchesbingos = req.body.bingos;
 
   let q = updatefunc(matchesbingos);
@@ -65,7 +66,7 @@ router.post("/", (req, res, next) => {
 });
 
 //get all points of a specific user at a specific season and specific domain
-router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
+router.get("/:userId/:seasonId/:domainId", auth, (req, res, next) => {
   const q = `
     Select userId,username,SUM(points) AS total_points FROM bets
     JOIN gameweeks 
@@ -80,14 +81,14 @@ router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "user not found" });
+        return res.status(400).json({ message: "Bettor not found" });
       connexion.query(
         "SELECT * FROM betfun_domains WHERE id=?",
         req.params.domainId,
         (error, result) => {
           if (error) return next(error);
           if (!result[0])
-            return res.status(400).json({ message: "domain not found" });
+            return res.status(400).json({ message: "Domain not found" });
           connexion.query(
             "SELECT * FROM user_domains WHERE userId=? AND domainId=?",
             [req.params.userId, req.params.domainId],
@@ -96,7 +97,7 @@ router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
               if (!result[0])
                 return res
                   .status(400)
-                  .json({ message: "user is not registered at this domain" });
+                  .json({ message: "Bettor is not registered at this domain" });
               connexion.query(
                 "SELECT * FROM gameweeks WHERE seasonId=? AND domainId=?",
                 [req.params.seasonId, req.params.domainId],
@@ -105,7 +106,7 @@ router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
                   if (!result[0])
                     return res
                       .status(400)
-                      .json({ message: "season not found" });
+                      .json({ message: "Season not found" });
                   connexion.query(
                     q,
                     [
@@ -117,7 +118,7 @@ router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
                       if (error) return next(error);
                       if (!result[0].userId)
                         return res.status(200).json({
-                          message: "user points",
+                          message: "Bettor points",
                           data: {
                             userId: req.params.userId,
                             total_points: 0,
@@ -125,7 +126,7 @@ router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
                         });
                       return res
                         .status(200)
-                        .json({ message: "user points", data: result });
+                        .json({ message: "Bettor points", data: result });
                     }
                   );
                 }
@@ -139,7 +140,7 @@ router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
 });
 
 //get all points of a specific user at a specific gameweek
-router.get("/:userId/:gameweekId", (req, res, next) => {
+router.get("/:userId/:gameweekId", auth, (req, res, next) => {
   const q = `
     Select userId,username,SUM(points) AS total_points FROM bets
     JOIN gameweeks 

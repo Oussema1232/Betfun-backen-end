@@ -1,10 +1,11 @@
 const express = require("express");
 const connexion = require("../startup/database");
 const auth = require("../middleware/auth");
+const authoriz = require("../middleware/authoriz");
 const router = express.Router();
 
 //get gameweeks of specific domain
-router.get("/:domainId", (req, res, next) => {
+router.get("/:domainId",auth, (req, res, next) => {
   const q = `
   SELECT gameweeks.id as id,gameweeks.name as name, seasons.id as seasonId, month_name as month,domainId FROM gameweeks 
   join seasons on seasonId=seasons.id
@@ -16,7 +17,7 @@ router.get("/:domainId", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "domain not found" });
+        return res.status(400).json({ message: "Domain not found" });
       connexion.query(q, req.params.domainId, (error, results) => {
         if (error) return next(error);
         return res.status(200).json({ message: "gameweeks", data: results });
@@ -26,7 +27,7 @@ router.get("/:domainId", (req, res, next) => {
 });
 
 //get gameweeks of specific season
-router.get("/:seasonId/:domainId", (req, res, next) => {
+router.get("/:seasonId/:domainId",auth, (req, res, next) => {
   const q = `
   SELECT gameweeks.id as id,gameweeks.name as name FROM gameweeks 
   join seasons on seasonId=seasons.id
@@ -39,23 +40,23 @@ router.get("/:seasonId/:domainId", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "season not found" });
+        return res.status(400).json({ message: "Season not found" });
       connexion.query(
         "SELECT * FROM betfun_domains WHERE id=?",
         req.params.domainId,
         (error, results) => {
           if (error) return next(error);
           if (!results[0])
-            return res.status(400).json({ message: "domain not found" });
+            return res.status(400).json({ message: "Domain not found" });
           connexion.query(
             q,
             [req.params.seasonId, req.params.domainId],
             (error, result) => {
               if (error) return next(error);
               if (!result[0])
-                return res.status(400).json({ message: "no gameweeks" });
+                return res.status(400).json({ message: "No gameweeks" });
               return res.status(200).json({
-                message: "gameweeks of season",
+                message: "Gameweeks of season",
                 data: result,
               });
             }
@@ -71,8 +72,8 @@ router.get("/:seasonId/:domainId", (req, res, next) => {
 //add new gameweek
 
 router.post(
-  "/",
-  // ,[auth,authoriz]
+  "/"
+  ,[auth,authoriz],
   (req, res, next) => {
     if (!req.body.name)
       return res.status(400).json({ message: "name of gameweek required" });
@@ -136,8 +137,8 @@ router.post(
 
 //update gameweek
 router.put(
-  "/:gameweekId",
-  // ,[auth,authoriz]
+  "/:gameweekId"
+  ,[auth,authoriz],
   (req, res, next) => {
     connexion.query(
       "SELECT * FROM gameweeks WHERE id=?",
@@ -203,8 +204,8 @@ router.put(
 
 //delete gameweek
 router.delete(
-  "/:gameweekId",
-  // ,[auth,authoriz]
+  "/:gameweekId"
+  ,[auth,authoriz],
   (req, res, next) => {
     connexion.query(
       "SELECT * FROM gameweeks WHERE id=?",

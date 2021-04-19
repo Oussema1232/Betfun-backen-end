@@ -1,6 +1,7 @@
 {
   "secretkey": "123456",
   "emailsecret": "654321",
+  "emailpassword": "123456",
   "dbinfo": {
     "host": "localhost",
     "user": "root",
@@ -9,8 +10,8 @@
     "multipleStatements": true
   },
   "cloudinaryconfig": {
-    "cloud_name": "dgrzq2thq",
-    "api_key": "837833242294234",
-    "api_secret": "kzXKFRmtmldD1_mA6oTFKJC5hn4"
+    "cloud_name": "aaaaa",
+    "api_key": "88888",
+    "api_secret": "bbbbb"
   }
 }

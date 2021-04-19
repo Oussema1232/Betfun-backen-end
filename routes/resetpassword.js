@@ -3,7 +3,6 @@ const bcrypt = require("bcrypt");
 const _ = require("lodash");
 const config = require("config");
 const express = require("express");
-const generateAuthToken = require("../token/createtoken");
 const connexion = require("../startup/database");
 
 const router = express.Router();
@@ -31,7 +30,7 @@ router.post("/:emailtoken", (req, res, next) => {
         if (error) return next(error);
         if (!results[0])
           return res.status(400).json({
-            message: "there is no account under this email! ",
+            message: "There is no account under this email! ",
           });
         const salt = await bcrypt.genSalt(10);
         const userpassword = await bcrypt.hash(req.body.userpassword, salt);
@@ -42,7 +41,7 @@ router.post("/:emailtoken", (req, res, next) => {
             if (error) return next(error);
 
             res.status(200).json({
-              message: "password updated successfully",
+              message: "Password updated successfully",
               data: decoded.email,
             });
           }

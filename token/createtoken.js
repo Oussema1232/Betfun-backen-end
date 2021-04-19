@@ -8,8 +8,9 @@ module.exports = function (user, secretcode, expiresIn) {
     "email",
     "isAdmin",
     "countryId",
-    "birthdate",
-    "imgURL",
+    "language",
+    "gender"
+    
   ]);
   return expiresIn
     ? jwt.sign(userdata, secretcode, { expiresIn })

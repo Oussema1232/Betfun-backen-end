@@ -1,5 +1,3 @@
-
-
 const express = require("express");
 const connexion = require("../startup/database");
 const updatebetdetails = require("../querry/updatebetdetails");
@@ -7,9 +5,9 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 //create bet
-router.post("/", (req, res, next) => {
-  // if (req.body.userId != req.user.id)
-  //   return res.status(403).json({ message: "Access forbidden" });
+router.post("/",auth, (req, res, next) => {
+  if (req.body.userId != req.user.id)
+    return res.status(403).json({ message: "Access forbidden" });
   connexion.beginTransaction(function (err) {
     if (err) {
       return next(err);
@@ -62,7 +60,7 @@ router.post("/", (req, res, next) => {
                     return next(err);
                   });
                 }
-                res.status(200).send("bet created successfully");
+                res.status(200).json({message:"Bet created successfully"});
               });
             });
           }
@@ -83,7 +81,7 @@ router.put("/:betId", auth, (req, res, next) => {
       if (err) {
         return next(err);
       }
-      if (!result[0]) return res.status(400).json({ message: "bet not found" });
+      if (!result[0]) return res.status(400).json({ message: "Bet not found" });
       if (result[0].userId != req.user.id)
         return res.status(403).json({ message: "Access forbidden" });
       connexion.query(q, (err, result) => {
@@ -97,7 +95,7 @@ router.put("/:betId", auth, (req, res, next) => {
 });
 
 //get bets of a specific user at specefic domain and a specefic season
-router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
+router.get("/:userId/:seasonId/:domainId",auth, (req, res, next) => {
   const q = `
   SELECT * FROM bets 
   JOIN gameweeks 
@@ -110,7 +108,7 @@ router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "user not found" });
+        return res.status(400).json({ message: "Bettor not found" });
       connexion.query(
         "SELECT * FROM betfun_domains WHERE id=?",
         req.params.domainId,
@@ -126,7 +124,7 @@ router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
               if (!result[0])
                 return res
                   .status(400)
-                  .json({ message: "user is not registered at this domain" });
+                  .json({ message: "Bettor is not registered at this domain" });
               connexion.query(
                 q,
                 [req.params.userId, req.params.seasonId, req.params.domainId],
@@ -144,7 +142,7 @@ router.get("/:userId/:seasonId/:domainId", (req, res, next) => {
 });
 
 //get bet of a specific user at a specific gameweek at a specific season
-router.get("/:userId/:gameweekId", (req, res, next) => {
+router.get("/:userId/:gameweekId",auth, (req, res, next) => {
   const q = `
       SELECT * FROM bets 
       JOIN gameweeks 
@@ -157,7 +155,7 @@ router.get("/:userId/:gameweekId", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "user not found" });
+        return res.status(400).json({ message: "Bettor not found" });
       connexion.query(
         "SELECT * FROM gameweeks WhERE id=?",
         req.params.gameweekId,
@@ -174,7 +172,7 @@ router.get("/:userId/:gameweekId", (req, res, next) => {
               if (!result[0])
                 return res
                   .status(400)
-                  .json({ message: "user is not registered at this domain" });
+                  .json({ message: "Bettor is not registered at this domain" });
               connexion.query(
                 q,
                 [req.params.userId, req.params.gameweekId],
@@ -192,7 +190,7 @@ router.get("/:userId/:gameweekId", (req, res, next) => {
 });
 
 //get bets of specific user at specific domain (all season)
-router.get("/all/seasons/:userId/:domainId", (req, res, next) => {
+router.get("/all/seasons/:userId/:domainId",auth, (req, res, next) => {
   const q = `
       SELECT bets.id as id ,gameweeks.name as gameweekname,seasonId,gameweeks.id as gameweekId,userId,gameweekId,bets.created_at,points,domainId,date_format(bets.created_at,'%d/%m/%y') as date,
       date_format(bets.created_at,'%H:%i')  as time FROM bets
@@ -206,7 +204,7 @@ router.get("/all/seasons/:userId/:domainId", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "user not found" });
+        return res.status(400).json({ message: "Bettor not found" });
       connexion.query(
         "SELECT * FROM user_domains WHERE userId=? AND domainId=?",
         [req.params.userId, req.params.domainId],
@@ -215,7 +213,7 @@ router.get("/all/seasons/:userId/:domainId", (req, res, next) => {
           if (!result[0])
             return res
               .status(400)
-              .json({ message: "user is not registered at this domain" });
+              .json({ message: "Bettor is not registered at this domain" });
           connexion.query(
             q,
             [req.params.userId, req.params.domainId],
@@ -231,7 +229,7 @@ router.get("/all/seasons/:userId/:domainId", (req, res, next) => {
 });
 
 //get domains of specefic user
-router.get("/:userId", (req, res, next) => {
+router.get("/:userId",auth, (req, res, next) => {
   const q = `
   SELECT domainId,name as domain_name, logo FROM user_domains
   JOIN betfun_domains ON id=domainId
@@ -243,10 +241,10 @@ router.get("/:userId", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "user not found" });
+        return res.status(400).json({ message: "Bettor not found" });
       connexion.query(q, req.params.userId, (error, results) => {
         if (error) return next(error);
-        return res.status(200).json({ message: "user domains", data: results });
+        return res.status(200).json({ message: "Bettor domains", data: results });
       });
     }
   );

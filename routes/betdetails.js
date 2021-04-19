@@ -5,7 +5,7 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 //get all details of a specific bet
-router.get("/:betId", (req, res, next) => {
+router.get("/:betId",auth, (req, res, next) => {
   const q = `
   SELECT teams1.name AS team1,teams2.name AS team2,teams1.logo as team1logo,teams2.logo as team2logo, guess,bingo,cote_x,cote_1,cote_2,goals1,goals2,CONCAT(goals1,"-",goals2) AS score,played_on,date_format(played_on,'%y/%m/%d') as day,
   date_format(played_on,'%H:%i') as time,idBet,idMatch,gameweeks.name as gameweekname FROM betdetails
@@ -34,7 +34,7 @@ router.get("/:betId", (req, res, next) => {
 });
 //update bet
 
-router.put("/:betId", (req, res, next) => {
+router.put("/:betId",auth, (req, res, next) => {
   let q = updatebetdetails(req.body.betdetails, req.params.betId);
   connexion.query(
     "SELECT * FROM bets WHERE id=?",
@@ -44,8 +44,8 @@ router.put("/:betId", (req, res, next) => {
         return next(err);
       }
       if (!result[0]) return res.status(400).json({ message: "bet not found" });
-      // if (result[0].userId != req.user.id)
-      //   return res.status(403).json({ message: "Access forbidden" });
+      if (result[0].userId != req.user.id)
+        return res.status(403).json({ message: "Access forbidden" });
       connexion.query(q, (err, result) => {
         if (err) {
           return next(err);
@@ -56,23 +56,6 @@ router.put("/:betId", (req, res, next) => {
   );
 });
 
-// router.put("/:id", (req, res, next) => {
-//   let q = updatebetdetails(req.body.betdetails, req.params.id);
-//   connexion.query(
-//     "SELECT * FROM bets WHERE id=?",
-//     req.params.id,
-//     (err, result) => {
-//       if (err) {
-//         return next(err);
-//       }
-//       connexion.query(q, (err, result) => {
-//         if (err) {
-//           return next(err);
-//         }
-//         res.status(200).send("guess updated successfully");
-//       });
-//     }
-//   );
-// });
+
 
 module.exports = router;

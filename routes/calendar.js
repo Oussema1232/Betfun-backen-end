@@ -1,10 +1,11 @@
 const express = require("express");
 const connexion = require("../startup/database");
 const auth = require("../middleware/auth");
+const authoriz = require("../middleware/authoriz");
 const router = express.Router();
 
 //get matches season domain special format
-router.get("/matches/:seasonId/:domainId", (req, res, next) => {
+router.get("/matches/:seasonId/:domainId",auth, (req, res, next) => {
   connexion.query(
     "SELECT * FROM betfun_domains WHERE id=?",
     req.params.domainId,
@@ -67,7 +68,7 @@ router.get("/matches/:seasonId/:domainId", (req, res, next) => {
             if (!result[0])
               return res
                 .status(400)
-                .json({ message: "there is no matches in this gameweek" });
+                .json({ message: "There is no matches in this gameweek" });
             let gameweekDays = result;
             connexion.query(qr, (error, result) => {
               if (error) return next(error);
@@ -114,7 +115,7 @@ router.get("/matches/:seasonId/:domainId", (req, res, next) => {
   );
 });
 //get matches season domain special format
-router.get("/fixtures/:seasonId/:domainId", (req, res, next) => {
+router.get("/fixtures/:seasonId/:domainId",auth, (req, res, next) => {
   connexion.query(
     "SELECT * FROM betfun_domains WHERE id=?",
     req.params.domainId,
@@ -170,7 +171,7 @@ router.get("/fixtures/:seasonId/:domainId", (req, res, next) => {
             if (!result[0])
               return res
                 .status(400)
-                .json({ message: "there is no matches in this gameweek" });
+                .json({ message: "There is no matches left" });
             let gameweekDays = result;
             connexion.query(qr, (error, result) => {
               if (error) return next(error);
@@ -225,7 +226,7 @@ router.get("/fixtures/:seasonId/:domainId", (req, res, next) => {
   );
 });
 //get matches gameweek
-router.get("/matches/:gameweekId", (req, res, next) => {
+router.get("/matches/:gameweekId",auth, (req, res, next) => {
   connexion.query(
     "SELECT * FROM gameweeks WHERE id=?",
     req.params.gameweekId,
@@ -372,8 +373,8 @@ router.get("/teamfixtures/:teamId", auth, (req, res) => {
 //admin
 //add new match
 router.post(
-  "/",
-  // ,[auth,authoriz]
+  "/"
+  ,[auth,authoriz],
   (req, res, next) => {
     if (!req.body.team1Id)
       return res.status(400).json({ message: "team1Id is required" });
@@ -452,8 +453,8 @@ router.post(
 
 //update match
 router.put(
-  "/:matchId",
-  // ,[auth,authoriz]
+  "/:matchId"
+  ,[auth,authoriz],
   (req, res, next) => {
     connexion.query(
       "SELECT * FROM calendar_results WHERE id=?",
@@ -540,8 +541,8 @@ router.put(
 
 //delete match
 router.delete(
-  "/:matchId",
-  // ,[auth,authoriz]
+  "/:matchId"
+  ,[auth,authoriz],
   (req, res, next) => {
     connexion.query(
       "SELECT * FROM calendar_results WHERE id=?",

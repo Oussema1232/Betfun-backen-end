@@ -1,13 +1,7 @@
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const express = require("express");
 const config = require("config");
-const _ = require("lodash");
-const generateAuthToken = require("../token/createtoken");
-const connexion = require("../startup/database");
-const authoriz = require("../middleware/authoriz");
-const auth = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -36,7 +30,7 @@ router.get("/:emailtoken", (req, res, next) => {
       requireTLS: true,
       auth: {
         user: "betfuncompany@gmail.com",
-        pass: "Soltan&7tombetfun1.",
+        pass:config.get("emailpassword"),
       },
       tls: {
         rejectUnauthorized: false,

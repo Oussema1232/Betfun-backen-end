@@ -29,23 +29,23 @@ router.post("/", (req, res, next) => {
             results[0],
             config.get("emailsecret")
           );
-          //   res.writeHead(302, {
-          //     Location: `http://localhost:3000/login/confirmation/${emailtoken}`,
-          //   });
-          //   return res.end();
-          // }
 
           return res
             .status(403)
-            .json({ data: emailtoken, message: "account not confirmed" });
+            .json({ data: emailtoken, message: "Account not confirmed" });
         }
 
         const token = generateAuthToken(results[0], config.get("secretkey"));
-        res.json({
-          token: token,
-          currentUser: _.omit(results[0], ["userpassword"]),
-          message:"you are in"
-        });
+        
+
+        return res
+          .header("x-auth-token", token)
+          .header("access-control-expose-headers", "x-auth-token")
+          .json({
+            token: token,
+            currentUser: _.omit(results[0], ["userpassword"]),
+            message: "Welcome",
+          });
       } catch (err) {
         return next(err);
       }

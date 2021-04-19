@@ -9,9 +9,9 @@ const router = express.Router();
 
 //create league
 //transaction
-router.post("/", (req, res, next) => {
-  // if (req.body.userId != req.user.id)
-  //   return res.status(403).json({ message: "Access forbidden" });
+router.post("/", auth, (req, res, next) => {
+  if (req.body.userId != req.user.id)
+    return res.status(403).json({ message: "Access forbidden" });
   if (!req.body.name)
     return res.status(400).send("The league must have a name");
   connexion.query(
@@ -75,7 +75,7 @@ router.post("/", (req, res, next) => {
                         });
                       }
                       res.status(200).json({
-                        message: "league created successfully",
+                        message: "League created successfully",
                         data: code,
                       });
                     });
@@ -91,9 +91,9 @@ router.post("/", (req, res, next) => {
 });
 
 //join league
-router.post("/join", (req, res, next) => {
-  // if (req.body.userId != req.user.id)
-  //   return res.status(403).json({ message: "Access forbidden" });
+router.post("/join", auth, (req, res, next) => {
+  if (req.body.userId != req.user.id)
+    return res.status(403).json({ message: "Access forbidden" });
   connexion.query(
     `SELECT * FROM leagues WHERE code=?`,
     req.body.code,
@@ -150,17 +150,18 @@ router.post("/join", (req, res, next) => {
 
 //delete leagues
 
-router.delete("/", (req, res) => {
+router.delete("/", [auth, authoriz], (req, res) => {
   connexion.query("DELETE FROM leagues", function (err, results) {
     if (err) return next(err);
-    if (results) return res.status(200).send(`leagues table deleted`);
+    if (results)
+      return res.status(200).json({ message: `leagues table deleted` });
   });
 });
 
 //order of users in a specific league (and specific month) and specific season
-router.get("/rank/:leagueId/:seasonId/:month", (req, res, next) => {
+router.get("/rank/:leagueId/:seasonId/:month",auth, (req, res, next) => {
   const q = `
-  Select users.id as userId,username,SUM(bets.points) AS total_points,month_name,seasons.name as seasonname FROM bets
+  Select users.id as userId,username,gender,isAdmin,language,SUM(bets.points) AS total_points,month_name,seasons.name as seasonname FROM bets
   JOIN users
   ON bets.userId=users.id
   JOIN gameweeks
@@ -182,7 +183,7 @@ router.get("/rank/:leagueId/:seasonId/:month", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "league not found" });
+        return res.status(400).json({ message: "League not found" });
       if (result[0].seasonId != req.params.seasonId)
         return res
           .status(400)
@@ -194,7 +195,7 @@ router.get("/rank/:leagueId/:seasonId/:month", (req, res, next) => {
         (error, result) => {
           if (error) return next(error);
           if (!result[0])
-            return res.status(400).json({ message: "season not found" });
+            return res.status(400).json({ message: "Season not found" });
           connexion.query(
             `
         SELECT * FROM gameweeks
@@ -207,7 +208,7 @@ router.get("/rank/:leagueId/:seasonId/:month", (req, res, next) => {
             (error, result) => {
               if (error) return next(error);
               if (!result[0])
-                return res.status(400).json({ message: "month not found" });
+                return res.status(400).json({ message: "Month not found" });
               connexion.query(
                 q,
                 [
@@ -256,7 +257,7 @@ router.get("/rank/:leagueId/:seasonId/:month", (req, res, next) => {
                     }
                     return res
                       .status(200)
-                      .json({ message: "order of users", data: rank });
+                      .json({ message: "Order of users", data: rank });
                   });
                 }
               );
@@ -269,9 +270,9 @@ router.get("/rank/:leagueId/:seasonId/:month", (req, res, next) => {
 });
 
 //order of users in a specific league  and specific season
-router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
+router.get("/rank/:leagueId/:seasonId",auth, (req, res, next) => {
   const q = `
-  Select users.id as userId,username,SUM(bets.points) AS total_points,seasons.name AS seasonname FROM bets
+  Select users.id as userId,username,gender,isAdmin,language,SUM(bets.points) AS total_points,seasons.name AS seasonname FROM bets
   JOIN users
   ON bets.userId=users.id
   JOIN gameweeks
@@ -291,7 +292,7 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "league not found" });
+        return res.status(400).json({ message: "League not found" });
       if (result[0].seasonId != req.params.seasonId)
         return res
           .status(400)
@@ -303,7 +304,7 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
         (error, result) => {
           if (error) return next(error);
           if (!result[0])
-            return res.status(400).json({ message: "season not found" });
+            return res.status(400).json({ message: "Season not found" });
           connexion.query(
             q,
             [req.params.leagueId, req.params.seasonId, league.domainId],
@@ -338,7 +339,7 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
                   result[0] ? (gameweek = result[0].name) : (gameweek = "-");
                   connexion.query(
                     `
-            Select users.id as userId,username, bets.points AS GW_points,gameweeks.id AS gameweekId, gameweeks.name FROM bets
+            Select users.id as userId,username,gender,isAdmin,language, bets.points AS GW_points,gameweeks.id AS gameweekId, gameweeks.name FROM bets
             JOIN users
             ON bets.userId=users.id
             JOIN gameweeks
@@ -365,7 +366,7 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
                           rank[i].GW_points = userRank[0].GW_points;
                       }
                       const qr = `
-                Select users.id as userId,username,SUM(bets.points) AS total_points FROM bets
+                Select users.id as userId,username,gender,isAdmin,language,SUM(bets.points) AS total_points FROM bets
                 JOIN users
                 ON bets.userId=users.id
                 JOIN gameweeks
@@ -407,7 +408,7 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
                             if (userRank[0]) rank[i].oldRank = userRank[0].rank;
                           }
                           const qr = `
-                 SELECT userId,users.username FROM user_league
+                 SELECT userId,users.username,gender,isAdmin,language FROM user_league
                  JOIN users
                  ON userId=users.id
                  WHERE leagueId=${req.params.leagueId}
@@ -450,7 +451,7 @@ router.get("/rank/:leagueId/:seasonId", (req, res, next) => {
 
 //get leagues of logedIn user at specific domain
 
-router.get("/:userId/:domainId", (req, res, next) => {
+router.get("/:userId/:domainId",auth, (req, res, next) => {
   const q = `
   SELECT leagues.id as leagueId, leagues.name as name,creatorId, created_at,genreId,leagues.seasonId AS seasonId,date_format(created_at,'%y/%m/%d') as date,
    date_format(created_at,'%H:%i')  as time FROM user_league
@@ -468,14 +469,14 @@ router.get("/:userId/:domainId", (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "user not found" });
+        return res.status(400).json({ message: "Bettor not found" });
       connexion.query(
         "SELECT * from betfun_domains WHERE id=?",
         req.params.domainId,
         (error, result) => {
           if (error) return next(error);
           if (!result[0])
-            return res.status(400).json({ message: "domain not found" });
+            return res.status(400).json({ message: "Domain not found" });
           connexion.query(
             "SELECT * FROM user_domains WHERE userId=? AND domainId=?",
             [req.params.userId, req.params.domainId],
@@ -488,12 +489,12 @@ router.get("/:userId/:domainId", (req, res, next) => {
               connexion.query(q, (error, results) => {
                 if (error) return next(error);
                 if (!results[0])
-                  return res.status(400).json({ message: "leagues not found" });
+                  return res.status(400).json({ message: "Leagues not found" });
                 const leagues = results;
                 let qr = "";
                 leagues.forEach((league) => {
                   qr += `
-                  Select users.id as userId,username,SUM(bets.points) AS total_points FROM bets
+                  Select users.id as userId,username,gender,isAdmin,language,gender,isAdmin,language,SUM(bets.points) AS total_points FROM bets
                   JOIN users
                   ON bets.userId=users.id
                   JOIN gameweeks
@@ -570,7 +571,7 @@ router.get("/:userId/:domainId", (req, res, next) => {
                           let ql = "";
                           leagues.forEach((league) => {
                             ql += `
-                      Select users.id as userId,username,SUM(bets.points) AS total_points FROM bets
+                      Select users.id as userId,username,gender,isAdmin,language,gender,isAdmin,language,SUM(bets.points) AS total_points FROM bets
                       JOIN users
                       ON bets.userId=users.id
                       JOIN gameweeks
@@ -640,7 +641,7 @@ router.get("/:userId/:domainId", (req, res, next) => {
                                   if (error) return next(error);
                                   leagues[0].months = result;
                                   return res.status(200).json({
-                                    message: "leagues",
+                                    message: "Leagues",
                                     data: leagues,
                                   });
                                 }
@@ -662,20 +663,20 @@ router.get("/:userId/:domainId", (req, res, next) => {
 });
 
 //get code of specific league
-router.get("/:leagueId", (req, res, next) => {
+router.get("/:leagueId",auth, (req, res, next) => {
   connexion.query(
     "SELECT * FROM leagues WHERE id=?",
     req.params.leagueId,
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "league not found" });
-      // if (req.user.id != result[0].creatorId)
-      //   return res
-      //     .status(403)
-      //     .json({
-      //       message: "Only the creator of this league can get the code",
-      //     });
+        return res.status(400).json({ message: "League not found" });
+      if (req.user.id != result[0].creatorId)
+        return res
+          .status(403)
+          .json({
+            message: "Only the creator of this league can get the code",
+          });
       return res.status(200).json({ message: "code", data: result[0].code });
     }
   );
@@ -688,11 +689,11 @@ router.post(
   // , [auth, authoriz]
   (req, res, next) => {
     if (!req.body.countryId)
-      return res.status(400).json({ message: "countryId is required " });
+      return res.status(400).json({ message: "CountryId is required " });
     if (!req.body.domainId)
-      return res.status(400).json({ message: "domainId is required " });
+      return res.status(400).json({ message: "DomainId is required " });
     if (!req.body.seasonId)
-      return res.status(400).json({ message: "seasonId is required " });
+      return res.status(400).json({ message: "SeasonId is required " });
     connexion.query(
       "SELECT * FROM countries WHERE id=?",
       req.body.countryId,
