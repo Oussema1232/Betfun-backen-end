@@ -145,7 +145,7 @@ router.post("/", (req, res, next) => {
                                         return next(err);
                                       });
                                     }
-                                    const url = `http://localhost:3000/register/confirmation/${emailtoken}`;
+                                    const url = `https://betfun.herokuapp.com/register/confirmation/${emailtoken}`;
                                     //send mail
                                     await transporter.sendMail(
                                       {

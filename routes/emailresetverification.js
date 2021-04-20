@@ -41,7 +41,7 @@ router.get("/:email", async (req, res, next) => {
         "1h"
       );
 
-      const url = `http://localhost:3000/account/resetpassword/${emailtoken}`;
+      const url = `https://betfun.herokuapp.com/account/resetpassword/${emailtoken}`;
       //send mail
       await transporter.sendMail(
         {

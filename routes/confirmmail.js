@@ -45,7 +45,7 @@ router.post("/:emailtoken", (req, res, next) => {
             }
           );
         } else if (req.body.data == "account/resetpassword") {
-          // const token = user.generateAuthToken();
+          
           return res.status(200).json({
             message: "Your email has been verified successfully",
             data: decoded.email,

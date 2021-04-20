@@ -7,46 +7,48 @@ const router = express.Router();
 
 //create user
 router.get("/:emailtoken", (req, res, next) => {
-  jwt.verify(req.params.emailtoken, config.get("emailsecret"), async function (
-    err,
-    decoded
-  ) {
-    if (err) {
-      if (err.message === "jwt malformed")
-        return res
-          .status(400)
-          .json({ message: "confirmation link not valid try again later! " });
-      if (err.message === "jwt expired")
-        return res.status(400).json({ message: "confirmation link expired " });
+  jwt.verify(
+    req.params.emailtoken,
+    config.get("emailsecret"),
+    async function (err, decoded) {
+      if (err) {
+        if (err.message === "jwt malformed")
+          return res
+            .status(400)
+            .json({ message: "confirmation link not valid try again later! " });
+        if (err.message === "jwt expired")
+          return res
+            .status(400)
+            .json({ message: "confirmation link expired " });
 
-      return next(err);
-    }
-    let transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
+        return next(err);
+      }
+      let transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
 
-      secureConnection: false, // TLS requires secureConnection to be false
-      port: 587, // port for secure SMTP
+        secureConnection: false, // TLS requires secureConnection to be false
+        port: 587, // port for secure SMTP
 
-      requireTLS: true,
-      auth: {
-        user: "betfuncompany@gmail.com",
-        pass:config.get("emailpassword"),
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-      logger: true,
-    });
+        requireTLS: true,
+        auth: {
+          user: "betfuncompany@gmail.com",
+          pass: config.get("emailpassword"),
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        logger: true,
+      });
 
-    const url = `http://localhost:3000/register/confirmation/${req.params.emailtoken}`;
-    //send mail
-    await transporter.sendMail(
-      {
-        from: '"BetFun" <betfuncompany@gmail.com>', // sender address
-        to: decoded.email, // list of receivers
-        subject: "email verification", // Subject line
-        text: "click on the link bellow", // plain text body
-        html: `<div
+      const url = `https://betfun.herokuapp.com/register/confirmation/${req.params.emailtoken}`;
+      //send mail
+      await transporter.sendMail(
+        {
+          from: '"BetFun" <betfuncompany@gmail.com>', // sender address
+          to: decoded.email, // list of receivers
+          subject: "email verification", // Subject line
+          text: "click on the link bellow", // plain text body
+          html: `<div
         style="
           width: 450px;
           margin-left:20%;
@@ -98,17 +100,18 @@ router.get("/:emailtoken", (req, res, next) => {
           >Confirm Account</a
         >
       </div>`, // html body
-      },
-      (error, info) => {
-        if (error) {
-          res
-            .status(400)
-            .json({ message: "something went wrong try again later" });
-          return next(error);
+        },
+        (error, info) => {
+          if (error) {
+            res
+              .status(400)
+              .json({ message: "something went wrong try again later" });
+            return next(error);
+          }
+          return res.status(200).json({ message: "link sent successfully" });
         }
-        return res.status(200).json({ message: "link sent successfully" });
-      }
-    );
-  });
+      );
+    }
+  );
 });
 module.exports = router;
