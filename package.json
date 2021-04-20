@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": "12.16.1"
+  },
   "scripts": {
     "test": "jest --watchAll --verbose",
     "start": "node app.js"
-  },
-  "engines": {
-    "node": "12.16.1"
   },
   "jest": {
     "testEnvironment": "node",
