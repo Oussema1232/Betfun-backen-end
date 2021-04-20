@@ -44,8 +44,7 @@ router.post("/", (req, res, next) => {
         req.body.username,
         function (err, results) {
           if (err) return next(err);
-          console.log(results);
-          console.log(req.body.username);
+         
           if (results[0])
             return res.status(400).json({ message: "username already exists" });
 
