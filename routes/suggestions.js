@@ -13,7 +13,7 @@ router.get("/", [auth, authoriz], (req, res, next) => {
 
     if (!results[0])
       return res.status(400).send("There are no suggestions available");
-    res
+    return res
       .status(200)
       .json({ data: results, message: "suggestions loaded successfully" });
   });

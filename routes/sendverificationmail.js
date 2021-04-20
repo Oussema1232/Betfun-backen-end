@@ -49,53 +49,53 @@ router.get("/:emailtoken", (req, res, next) => {
           subject: "email verification", // Subject line
           text: "click on the link bellow", // plain text body
           html: `<div
-        style="
+          style="
           width: 450px;
           margin-left:20%;
-          background-color: #f5f5e5;
+          background-color: #fbfbfb;
          
           box-sizing:border-box;
           padding: 20px;
-          border:2px solid #4e0000;
+          border:2px solid #d4d4d3;
           border-radius: 3px;
-          box-shadow: 0px 0px 3px 4px #dddfad;
+          box-shadow: 0px 0px 3px 4px #d4d4d3;
         "
       >
         <div
-          style="
-            font-size: 18px;
-            color: #767676;
-            border-bottom: 2px solid #dddddd;
-            padding: 10px;
-            width: 95%;
-            
-          "
+        style="
+        font-size: 18px;
+        color: #171717;
+        border-bottom: 2px solid #d4d4d3;
+        padding: 10px;
+        width: 95%;
+        
+      "
         >
           Welcome ${decoded.username}, We bet that you want to confirm your account to join
           us..okay then
         </div>
-        <h2 style="width:95%;color:black">You may click on the button below to log into Betfun</h2>
+        <h2 style="width:95%;color:#171717">You may click on the button below to log into Betfun</h2>
         <a
-          style="
-            text-decoration: none;
-            
-            display: inline-block;
-            color: #070427;
-            width: 95%;
-            height: 30px;
-                text-align:center;
-                padding-top:15px;      
-                padding-bottom:15px;      
-            
-            margin-top: 25px;
-            border: 5px solid #070427;
-            border-radius: 3px;
-            background-color: rgba(255, 185, 82, 0.7);
-            font-weight: bolder;
-            font-size: 20px;
-            cursor: pointer;
-            user-select: none;
-          "
+        style="
+        text-decoration: none;
+        
+        display: inline-block;
+        color: #fbfbfb;
+        width: 95%;
+        height: 30px;
+            text-align:center;
+            padding-top:15px;      
+            padding-bottom:15px;      
+        
+        margin-top: 25px;
+        border: 5px solid #f9a828;
+        border-radius: 3px;
+        background-color: #07617d;
+        font-weight: bolder;
+        font-size: 20px;
+        cursor: pointer;
+        user-select: none;
+      "
           href="${url}"
           >Confirm Account</a
         >

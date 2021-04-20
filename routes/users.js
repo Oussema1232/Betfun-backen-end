@@ -250,7 +250,7 @@ router.get("/:id", auth, (req, res, next) => {
 
       if (!results[0])
         return res.status(400).send("Bettor not found under this id");
-      res.status(200).send(_.omit(results[0], ["userpassword"]));
+     return res.status(200).send(_.omit(results[0], ["userpassword"]));
     }
   );
 });
