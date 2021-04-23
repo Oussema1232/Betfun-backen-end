@@ -506,52 +506,52 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                   ORDER BY total_points DESC;
                 `;
                 });
-                connexion.query(qr + "SELECT 1 WHERE 1=2", (error, result) => {
-                  if (error) return next(error);
-                  if (!results[0])
-                    return res
-                      .status(200)
-                      .json({
+                connexion.query(
+                  qr + "SELECT * from leagues WHERE 1=2",
+                  (error, result) => {
+                    if (error) return next(error);
+                    if (!results[0])
+                      return res.status(200).json({
                         message: "Leagues with no ranks",
                         data: results,
                       });
-                  result.pop();
-                  for (let i = 0; i < result.length; i++) {
-                    for (let j = 0; j < result[i].length; j++) {
-                      if (j == 0) {
-                        result[i][j].rank = 1;
-                      } else {
-                        if (
-                          result[i][j].total_points ==
-                          result[i][j - 1].total_points
-                        ) {
-                          result[i][j].rank = result[i][j - 1].rank;
+                    result.pop();
+                    for (let i = 0; i < result.length; i++) {
+                      for (let j = 0; j < result[i].length; j++) {
+                        if (j == 0) {
+                          result[i][j].rank = 1;
                         } else {
-                          result[i][j].rank = j + 1;
+                          if (
+                            result[i][j].total_points ==
+                            result[i][j - 1].total_points
+                          ) {
+                            result[i][j].rank = result[i][j - 1].rank;
+                          } else {
+                            result[i][j].rank = j + 1;
+                          }
                         }
                       }
                     }
-                  }
-                  let rank = result;
-                  connexion.query(
-                    `SELECT * FROM calendar_results
+                    let rank = result;
+                    connexion.query(
+                      `SELECT * FROM calendar_results
                     JOIN gameweeks
                     ON gameweeks.id=gameweekId
                     WHERE bingo IS NOT NULL AND domainId=? AND seasonId=?
                     ORDER BY played_on DESC`,
-                    [req.params.domainId, leagues[0].seasonId],
-                    (error, result) => {
-                      if (error) return next(error);
-                      let gameweek = "-";
-                      let gameweekId = "";
-                      result[0]
-                        ? (gameweekId = result[0].gameweekId)
-                        : (gameweekId = null);
-                      result[0]
-                        ? (gameweek = result[0].name)
-                        : (gameweek = "-");
-                      connexion.query(
-                        `
+                      [req.params.domainId, leagues[0].seasonId],
+                      (error, result) => {
+                        if (error) return next(error);
+                        let gameweek = "-";
+                        let gameweekId = "";
+                        result[0]
+                          ? (gameweekId = result[0].gameweekId)
+                          : (gameweekId = null);
+                        result[0]
+                          ? (gameweek = result[0].name)
+                          : (gameweek = "-");
+                        connexion.query(
+                          `
                   SELECT userId,gameweeks.name,gameweekId,points
                   FROM gameweeks
                   JOIN bets
@@ -559,25 +559,25 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                   WHERE domainId=${req.params.domainId}
                   ORDER BY gameweekId DESC
                   `,
-                        (error, result) => {
-                          if (error) return next(error);
+                          (error, result) => {
+                            if (error) return next(error);
 
-                          for (let i = 0; i < rank.length; i++) {
-                            for (let j = 0; j < rank[i].length; j++) {
-                              rank[i][j].GW_points = 0;
-                              rank[i][j].gameweek = gameweek;
-                              let gmPoint = result.filter(
-                                (el) =>
-                                  el.userId == rank[i][j].userId &&
-                                  el.gameweekId == gameweekId
-                              );
-                              if (gmPoint[0])
-                                rank[i][j].GW_points = gmPoint[0].points;
+                            for (let i = 0; i < rank.length; i++) {
+                              for (let j = 0; j < rank[i].length; j++) {
+                                rank[i][j].GW_points = 0;
+                                rank[i][j].gameweek = gameweek;
+                                let gmPoint = result.filter(
+                                  (el) =>
+                                    el.userId == rank[i][j].userId &&
+                                    el.gameweekId == gameweekId
+                                );
+                                if (gmPoint[0])
+                                  rank[i][j].GW_points = gmPoint[0].points;
+                              }
                             }
-                          }
-                          let ql = "";
-                          leagues.forEach((league) => {
-                            ql += `
+                            let ql = "";
+                            leagues.forEach((league) => {
+                              ql += `
                       Select users.id as userId,username,gender,isAdmin,language,SUM(bets.points) AS total_points FROM bets
                       JOIN users
                       ON bets.userId=users.id
@@ -589,77 +589,79 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                       GROUP BY bets.userId
                       ORDER BY total_points DESC;
                     `;
-                          });
-                          connexion.query(
-                            ql + "SELECT 1 WHERE 1=2",
-                            (error, result) => {
-                              if (error) return next(error);
-                              result.pop();
-                              for (let i = 0; i < result.length; i++) {
-                                for (let j = 0; j < result[i].length; j++) {
-                                  if (j == 0) {
-                                    result[i][j].rank = 1;
-                                  } else {
-                                    if (
-                                      result[i][j].total_points ==
-                                      result[i][j - 1].total_points
-                                    ) {
-                                      result[i][j].rank = result[i][j - 1].rank;
+                            });
+                            connexion.query(
+                              ql + "SELECT 1 WHERE 1=2",
+                              (error, result) => {
+                                if (error) return next(error);
+                                result.pop();
+                                for (let i = 0; i < result.length; i++) {
+                                  for (let j = 0; j < result[i].length; j++) {
+                                    if (j == 0) {
+                                      result[i][j].rank = 1;
                                     } else {
-                                      result[i][j].rank = j + 1;
+                                      if (
+                                        result[i][j].total_points ==
+                                        result[i][j - 1].total_points
+                                      ) {
+                                        result[i][j].rank =
+                                          result[i][j - 1].rank;
+                                      } else {
+                                        result[i][j].rank = j + 1;
+                                      }
                                     }
                                   }
                                 }
-                              }
-                              for (let i = 0; i < rank.length; i++) {
-                                for (let j = 0; j < rank[i].length; j++) {
-                                  rank[i][j].oldRank = "-";
-                                  let oldrank = result[i].filter(
-                                    (el) => el.userId == rank[i][j].userId
-                                  );
-                                  if (oldrank[0])
-                                    rank[i][j].oldRank = oldrank[0].rank;
+                                for (let i = 0; i < rank.length; i++) {
+                                  for (let j = 0; j < rank[i].length; j++) {
+                                    rank[i][j].oldRank = "-";
+                                    let oldrank = result[i].filter(
+                                      (el) => el.userId == rank[i][j].userId
+                                    );
+                                    if (oldrank[0])
+                                      rank[i][j].oldRank = oldrank[0].rank;
+                                  }
                                 }
-                              }
-                              for (let i = 0; i < leagues.length; i++) {
-                                leagues[i].userPoint = "-";
-                                leagues[i].userRank = "-";
-                                leagues[i].oldRank = "-";
+                                for (let i = 0; i < leagues.length; i++) {
+                                  leagues[i].userPoint = "-";
+                                  leagues[i].userRank = "-";
+                                  leagues[i].oldRank = "-";
 
-                                let userdata = rank[i].filter(
-                                  (el) => el.userId == req.params.userId
-                                );
-                                if (userdata[0]) {
-                                  leagues[i].userPoint =
-                                    userdata[0].total_points;
-                                  leagues[i].userRank = userdata[0].rank;
-                                  leagues[i].oldRank = userdata[0].oldRank;
+                                  let userdata = rank[i].filter(
+                                    (el) => el.userId == req.params.userId
+                                  );
+                                  if (userdata[0]) {
+                                    leagues[i].userPoint =
+                                      userdata[0].total_points;
+                                    leagues[i].userRank = userdata[0].rank;
+                                    leagues[i].oldRank = userdata[0].oldRank;
+                                  }
                                 }
-                              }
-                              connexion.query(
-                                `
+                                connexion.query(
+                                  `
                       SELECT month_name FROM gameweeks
                       JOIN calendar_results
                       ON gameweeks.id=gameweekId
                       WHERE domainId=${req.params.domainId} AND seasonId=${leagues[0].seasonId} AND bingo IS NOT NULL
                       GROUP BY gameweeks.month_name
                       `,
-                                (error, result) => {
-                                  if (error) return next(error);
-                                  leagues[0].months = result;
-                                  return res.status(200).json({
-                                    message: "Leagues",
-                                    data: leagues,
-                                  });
-                                }
-                              );
-                            }
-                          );
-                        }
-                      );
-                    }
-                  );
-                });
+                                  (error, result) => {
+                                    if (error) return next(error);
+                                    leagues[0].months = result;
+                                    return res.status(200).json({
+                                      message: "Leagues",
+                                      data: leagues,
+                                    });
+                                  }
+                                );
+                              }
+                            );
+                          }
+                        );
+                      }
+                    );
+                  }
+                );
               });
             }
           );
