@@ -2,12 +2,10 @@ const express = require("express");
 const connexion = require("../startup/database");
 const auth = require("../middleware/auth");
 
-
 const router = express.Router();
 
 //get domains of specefic user
 router.get("/:userId", auth, (req, res, next) => {
-  
   const q = `
   SELECT  id, userId ,domainId,domainname, logo FROM user_domains
   JOIN betfun_domains ON id=domainId
@@ -55,7 +53,7 @@ router.post("/", auth, (req, res, next) => {
       };
       connexion.query(
         "SELECT * FROM user_domains WHERE userId=? AND domainId=?",
-        [6, req.user.id],
+        [domain.userId, domain.domainId],
         (error, result) => {
           if (error) return next(error);
           if (result[0])
