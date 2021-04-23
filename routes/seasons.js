@@ -182,16 +182,16 @@ router.put("/:seasonId/:domainId", [auth, authoriz], (req, res, next) => {
         return res
           .status(400)
           .json({ message: "domain_seasonstatus not found" });
-      if (req.body.isfinished == true && result[0].isfinished == 1)
+      if (req.body.isfinished == true && result[0].isFinished == 1)
         return res
           .status(400)
           .json({ message: "domain_seasonstatus alrady finished" });
-      if (req.body.isfinished == false && result[0].isfinished == 0)
+      if (req.body.isfinished == false && result[0].isFinished == 0)
         return res
           .status(400)
           .json({ message: "domain_seasonstatus alrady not finished" });
       connexion.query(
-        "SELECT * FROM domain_seasonstatus WHERE domainId=? AND isfinished=false",
+        "SELECT * FROM domain_seasonstatus WHERE domainId=? AND isFinished=false",
         req.params.domainId,
         (error, result) => {
           if (error) return next(error);

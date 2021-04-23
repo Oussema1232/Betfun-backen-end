@@ -461,7 +461,7 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
      ON domain_seasonstatus.seasonId=leagues.seasonId
   JOIN leagues_genres
      ON leagues_genres.id=leagues.genreId
-  WHERE userId=${req.params.userId} AND leagues.domainId=${req.params.domainId} AND domain_seasonstatus.domainId=${req.params.domainId} AND isfinished=false
+  WHERE userId=${req.params.userId} AND leagues.domainId=${req.params.domainId} AND domain_seasonstatus.domainId=${req.params.domainId} AND isFinished=false
   `;
   connexion.query(
     "SELECT * FROM users WHERE id=?",
