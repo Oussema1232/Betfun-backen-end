@@ -508,6 +508,13 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                 });
                 connexion.query(qr + "SELECT 1 WHERE 1=2", (error, result) => {
                   if (error) return next(error);
+                  if (!results[0])
+                    return res
+                      .status(200)
+                      .json({
+                        message: "Leagues with no ranks",
+                        data: results,
+                      });
                   result.pop();
                   for (let i = 0; i < result.length; i++) {
                     for (let j = 0; j < result[i].length; j++) {
