@@ -461,7 +461,7 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
      ON domain_seasonstatus.seasonId=leagues.seasonId
   JOIN leagues_genres
      ON leagues_genres.id=leagues.genreId
-  WHERE userId=${req.params.userId} AND leagues.domainId=${req.params.domainId} AND domain_seasonstatus.domainId=${req.params.domainId} AND isFinished=false
+  WHERE userId=${req.params.userId} AND leagues.domainId=${req.params.domainId} AND domain_seasonstatus.domainId=${req.params.domainId} AND isFinished=0
   `;
   connexion.query(
     "SELECT * FROM users WHERE id=?",
@@ -494,7 +494,7 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                 let qr = "";
                 leagues.forEach((league) => {
                   qr += `
-                  Select users.id as userId,username,gender,isAdmin,language,isAdmin,language,SUM(bets.points) AS total_points FROM bets
+                  Select users.id as userId,username,gender,isAdmin,language,SUM(bets.points) AS total_points FROM bets
                   JOIN users
                   ON bets.userId=users.id
                   JOIN gameweeks
@@ -571,7 +571,7 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                           let ql = "";
                           leagues.forEach((league) => {
                             ql += `
-                      Select users.id as userId,username,gender,isAdmin,language,isAdmin,language,SUM(bets.points) AS total_points FROM bets
+                      Select users.id as userId,username,gender,isAdmin,language,SUM(bets.points) AS total_points FROM bets
                       JOIN users
                       ON bets.userId=users.id
                       JOIN gameweeks
