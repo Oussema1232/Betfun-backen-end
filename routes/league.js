@@ -494,7 +494,7 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                 let qr = "";
                 leagues.forEach((league) => {
                   qr += `
-                  Select users.id as userId,username,gender,isAdmin,language,gender,isAdmin,language,SUM(bets.points) AS total_points FROM bets
+                  Select users.id as userId,username,gender,isAdmin,language,isAdmin,language,SUM(bets.points) AS total_points FROM bets
                   JOIN users
                   ON bets.userId=users.id
                   JOIN gameweeks
@@ -571,7 +571,7 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                           let ql = "";
                           leagues.forEach((league) => {
                             ql += `
-                      Select users.id as userId,username,gender,isAdmin,language,gender,isAdmin,language,SUM(bets.points) AS total_points FROM bets
+                      Select users.id as userId,username,gender,isAdmin,language,isAdmin,language,SUM(bets.points) AS total_points FROM bets
                       JOIN users
                       ON bets.userId=users.id
                       JOIN gameweeks
