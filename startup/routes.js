@@ -38,7 +38,7 @@ module.exports = function (app) {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader(
       "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization"
+      "Origin, X-Requested-With, Content, Accept, Content-Type,append,delete,entries,foreach,get,has,keys,set,values,x-auth-token, Authorization"
     );
     res.setHeader(
       "Access-Control-Allow-Methods",
