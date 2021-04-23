@@ -686,7 +686,7 @@ router.get("/:leagueId",auth, (req, res, next) => {
 //create new country league
 router.post(
   "/admin/",
-  // , [auth, authoriz]
+  [auth, authoriz],
   (req, res, next) => {
     if (!req.body.countryId)
       return res.status(400).json({ message: "CountryId is required " });
@@ -726,7 +726,7 @@ router.post(
                         .status(400)
                         .json({ message: "league already exist" });
                     connexion.query(
-                      'SELECT * FROM leagues_genres WHERE name="public"',
+                      'SELECT * FROM leagues_genres WHERE name="Global"',
                       (error, result) => {
                         if (error) return next(error);
                         let newLeague = {
@@ -761,8 +761,8 @@ router.post(
 
 // update leagues
 router.put(
-  "/:leagueId",
-  // , [auth, authoriz]
+  "/:leagueId"
+  , [auth, authoriz],
   (req, res, next) => {
     connexion.query(
       "SELECT * FROM leagues WHERE id=?",
