@@ -20,12 +20,10 @@ router.get("/", auth, (req, res, next) => {
 router.get("/:domainId", auth, (req, res, next) => {
   const q = `
   SELECT seasons.id AS id , seasons.name AS name,isFinished FROM seasons
-  JOIN gameweeks 
-  ON seasons.id=gameweeks.seasonId
   JOIN domain_seasonstatus 
   ON seasons.id=domain_seasonstatus.seasonId AND domain_seasonstatus.domainId=${req.params.domainId}
-  WHERE gameweeks.domainId=?
-  GROUP BY gameweeks.seasonId;
+  WHERE domainId=?
+  GROUP BY seasonId;
   `;
   connexion.query(
     "SELECT * FROM betfun_domains WHERE id=?",
