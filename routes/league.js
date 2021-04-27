@@ -519,7 +519,7 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                 `;
                 });
                 connexion.query(
-                  qr + "SELECT * from leagues WHERE 1=2",
+                  qr + "SELECT * from leagues WHERE genreId=hello",
                   (error, result) => {
                     if (error) {
                       console.log("5");
@@ -612,7 +612,7 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                     `;
                             });
                             connexion.query(
-                              ql + "SELECT 1 WHERE 1=2",
+                              ql + "SELECT * from leagues WHERE genreId=hello",
                               (error, result) => {
                                 if (error) {
                                   console.log("8");
