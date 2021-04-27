@@ -467,27 +467,39 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
     "SELECT * FROM users WHERE id=?",
     req.params.userId,
     (error, result) => {
-      if (error) return next(error);
+      if (error) {
+        console.log("1");
+        return next(error);
+      }
       if (!result[0])
         return res.status(400).json({ message: "Bettor not found" });
       connexion.query(
         "SELECT * from betfun_domains WHERE id=?",
         req.params.domainId,
         (error, result) => {
-          if (error) return next(error);
+          if (error) {
+            console.log("2");
+            return next(error);
+          }
           if (!result[0])
             return res.status(400).json({ message: "Domain not found" });
           connexion.query(
             "SELECT * FROM user_domains WHERE userId=? AND domainId=?",
             [req.params.userId, req.params.domainId],
             (error, result) => {
-              if (error) return next(error);
+              if (error) {
+                console.log("3");
+                return next(error);
+              }
               if (!result[0])
                 return res
                   .status(400)
                   .json({ message: "Bettor not registered in this domain" });
               connexion.query(q, (error, results) => {
-                if (error) return next(error);
+                if (error) {
+                  console.log("4");
+                  return next(error);
+                }
                 if (!results[0])
                   return res.status(400).json({ message: "Leagues not found" });
                 const leagues = results;
@@ -509,7 +521,10 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                 connexion.query(
                   qr + "SELECT * from leagues WHERE 1=2",
                   (error, result) => {
-                    if (error) return next(error);
+                    if (error) {
+                      console.log("5");
+                      return next(error);
+                    }
                     if (!results[0])
                       return res.status(200).json({
                         message: "Leagues with no ranks",
@@ -541,7 +556,10 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                     ORDER BY played_on DESC`,
                       [req.params.domainId, leagues[0].seasonId],
                       (error, result) => {
-                        if (error) return next(error);
+                        if (error) {
+                          console.log("6");
+                          return next(error);
+                        }
                         let gameweek = "-";
                         let gameweekId = "";
                         result[0]
@@ -560,7 +578,10 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                   ORDER BY gameweekId DESC
                   `,
                           (error, result) => {
-                            if (error) return next(error);
+                            if (error) {
+                              console.log("7");
+                              return next(error);
+                            }
 
                             for (let i = 0; i < rank.length; i++) {
                               for (let j = 0; j < rank[i].length; j++) {
@@ -593,7 +614,10 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                             connexion.query(
                               ql + "SELECT 1 WHERE 1=2",
                               (error, result) => {
-                                if (error) return next(error);
+                                if (error) {
+                                  console.log("8");
+                                  return next(error);
+                                }
                                 result.pop();
                                 for (let i = 0; i < result.length; i++) {
                                   for (let j = 0; j < result[i].length; j++) {
@@ -646,7 +670,10 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                       GROUP BY gameweeks.month_name
                       `,
                                   (error, result) => {
-                                    if (error) return next(error);
+                                    if (error) {
+                                      console.log("9");
+                                      return next(error);
+                                    }
                                     leagues[0].months = result;
                                     return res.status(200).json({
                                       message: "Leagues",
