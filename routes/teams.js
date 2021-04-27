@@ -18,9 +18,11 @@ router.get("/:domainId", [auth, authoriz], (req, res, next) => {
     (error, result) => {
       if (error) return next(error);
       if (!result[0])
-        return res.status(400).json({ message: "domain not found" });
+        return res.status(400).json({ message: "Domain not found" });
       connexion.query(q, req.params.domainId, (error, result) => {
         if (error) return next(error);
+        if (!result[0])
+          return res.status(400).json({ message: "No teams yet" });
         return res.status(200).json({ message: "teams", data: result });
       });
     }
@@ -39,7 +41,7 @@ router.post("/", [auth, authoriz, upload], async (req, res, next) => {
     console.log("name");
     return res.status(400).json({ message: "name of team is required" });
   }
-  
+
   if (!req.body.domainId) {
     console.log("domain");
     return res.status(400).json({ message: "domainId is required" });
