@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "jest --watchAll --verbose",
-    "start": "node app.js"
+    "start": "pm2 start app.js"
   },
   "jest": {
     "testEnvironment": "node",
