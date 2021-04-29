@@ -31,6 +31,8 @@ const logger = createLogger({
 module.exports = function (err, req, res, next) {
   logger.error(err.message);
   logger.warn(err.message);
-  res.status(500).json({ message: err.message });
+  res
+    .status(500)
+    .json({ messagedebug: err.message, message: "Something went wrong!" });
   next();
 };
