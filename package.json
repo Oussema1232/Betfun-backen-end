@@ -2,13 +2,13 @@
   "name": "betfunbackend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "engines": {
     "node": "12.16.1"
   },
   "scripts": {
     "test": "jest --watchAll --verbose",
-    "start": "node app.js"
+    "start": "pm2-runtime start ecosystem.config.js --env production"
   },
   "jest": {
     "testEnvironment": "node",
