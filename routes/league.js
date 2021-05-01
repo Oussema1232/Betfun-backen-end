@@ -304,7 +304,7 @@ router.get("/rank/:leagueId/:seasonId", auth, (req, res, next) => {
         (error, result) => {
           if (error) return next(error);
           if (!result[0])
-            return res.status(400).json({ message: "Season not found" });
+            return res.status(400).json({ message: "No gameweeks yet" });
           connexion.query(
             q,
             [req.params.leagueId, req.params.seasonId, league.domainId],
