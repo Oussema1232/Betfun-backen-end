@@ -66,12 +66,10 @@ router.get("/matches/:seasonId/:domainId", auth, (req, res, next) => {
           connexion.query(q, (error, result) => {
             if (error) return next(error);
             if (!result[0])
-              return res
-                .status(200)
-                .json({
-                  message: "There is no matches in this gameweek",
-                  data: [],
-                });
+              return res.status(200).json({
+                message: "There is no matches in this gameweek",
+                data: [],
+              });
             let gameweekDays = result;
             connexion.query(qr, (error, result) => {
               if (error) return next(error);
@@ -225,6 +223,81 @@ router.get("/fixtures/:seasonId/:domainId", auth, (req, res, next) => {
           });
         }
       );
+    }
+  );
+});
+
+//get matches gameweek
+router.get("/matches/:gameweekId", auth, (req, res, next) => {
+  connexion.query(
+    "SELECT * FROM gameweeks WHERE id=?",
+    req.params.gameweekId,
+    (error, result) => {
+      if (error) return next(error);
+      if (!result[0])
+        return res.status(400).json({ message: "gameweek not found" });
+
+      let tab = [];
+
+      q = `SELECT date_format(played_on,'%y/%m/%d') as day FROM calendar_results 
+              WHERE gameweekId=${req.params.gameweekId}
+              GROUP BY day
+              ;`;
+      qr = `SELECT 
+            CONCAT(teams1.name," vs ",teams2.name) AS matchs,
+                         played_on,
+                         calendar_results.id as idMatch,
+                         date_format(played_on,'%y/%m/%d') as day,
+                         date_format(played_on,'%H:%i') as time,
+                         gameweeks.name as gameweekname,
+                         gameweeks.id as gameweekId,
+                         teams1.id as team1Id,
+                        teams2.id as team2Id,
+                        teams1.name as team1,
+                        teams2.name as team2,
+                        teams1.logo as team1logo,
+                        teams2.logo as team2logo,
+                         cote_1,
+                         cote_2,
+                         cote_x,
+                         goals1,
+                         goals2 
+                  FROM calendar_results
+                  JOIN teams AS teams1
+                  ON teams1.id=team1Id
+                  JOIN teams AS teams2
+                  ON teams2.id=team2Id
+                  JOIN gameweeks 
+                  On gameweeks.id=calendar_results.gameweekId
+             WHERE gameweekId=${req.params.gameweekId};`;
+
+      connexion.query(q, (error, result) => {
+        if (error) return next(error);
+        if (!result[0])
+          return res
+            .status(400)
+            .json({ message: "there is no matches in this gameweek" });
+        let gameweekDays = result;
+        connexion.query(qr, (error, result) => {
+          if (error) return next(error);
+
+          let days = [];
+          for (let j = 0; j < gameweekDays.length; j++) {
+            days.push({
+              day: gameweekDays[j].day,
+              matches: result.filter((el) => el.day == gameweekDays[j].day),
+            });
+          }
+          tab.push({
+            gameweekId: req.params.gameweekId,
+            days: days,
+          });
+
+          return res
+            .status(200)
+            .json({ message: `matchs ${tab[0].days.length}`, data: tab });
+        });
+      });
     }
   );
 });
