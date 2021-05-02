@@ -7,15 +7,19 @@ const auth = require("../middleware/auth");
 const authoriz = require("../middleware/authoriz");
 
 router.get("/", (req, res, next) => {
-  connexion.query(`SELECT * FROM countries`, function (err, results) {
-    if (err) return next(err);
+  connexion.query(
+    `SELECT * FROM countries ORDER BY name ASC`,
+    function (err, results) {
+      if (err) return next(err);
 
-    if (!results[0])
-      return res.status(400).send("There are no countries available");
-    return res
-      .status(200)
-      .json({ data: results, message: "Countries loaded successfully" });
-  });
+      if (!results[0])
+        return res.status(400).send("There are no countries available");
+
+      return res
+        .status(200)
+        .json({ data: results, message: "Countries loaded successfully" });
+    }
+  );
 });
 
 //Admin
