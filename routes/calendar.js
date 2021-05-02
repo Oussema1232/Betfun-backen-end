@@ -165,7 +165,7 @@ router.get("/fixtures/:seasonId/:domainId", auth, (req, res, next) => {
                   ON teams2.id=team2Id
                   JOIN gameweeks 
                   On gameweeks.id=calendar_results.gameweekId
-             WHERE gameweekId=${result[i].id} AND bingo is null;`;
+             WHERE gameweekId=${result[i].id} AND bingo is null ORDER BY played_on ASC;`;
           }
           connexion.query(q, (error, result) => {
             if (error) return next(error);
@@ -269,7 +269,7 @@ router.get("/matches/:gameweekId", auth, (req, res, next) => {
                   ON teams2.id=team2Id
                   JOIN gameweeks 
                   On gameweeks.id=calendar_results.gameweekId
-             WHERE gameweekId=${req.params.gameweekId};`;
+             WHERE gameweekId=${req.params.gameweekId} ORDER BY played_on ASC;`;
 
       connexion.query(q, (error, result) => {
         if (error) return next(error);

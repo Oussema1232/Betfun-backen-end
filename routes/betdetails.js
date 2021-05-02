@@ -5,7 +5,7 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 //get all details of a specific bet
-router.get("/:betId",auth, (req, res, next) => {
+router.get("/:betId", auth, (req, res, next) => {
   const q = `
   SELECT teams1.name AS team1,teams2.name AS team2,teams1.logo as team1logo,teams2.logo as team2logo, guess,bingo,cote_x,cote_1,cote_2,goals1,goals2,CONCAT(goals1,"-",goals2) AS score,played_on,date_format(played_on,'%y/%m/%d') as day,
   date_format(played_on,'%H:%i') as time,idBet,idMatch,gameweeks.name as gameweekname FROM betdetails
@@ -17,7 +17,8 @@ router.get("/:betId",auth, (req, res, next) => {
   ON teams2.id=team2Id
   JOIN gameweeks
   ON gameweeks.id=gameweekId
-  WHERE idBet=?;
+  WHERE idBet=?
+  ORDER BY played_on ASC;
   `;
   connexion.query(
     "SELECT * FROM bets WHERE id=?",
@@ -34,7 +35,7 @@ router.get("/:betId",auth, (req, res, next) => {
 });
 //update bet
 
-router.put("/:betId",auth, (req, res, next) => {
+router.put("/:betId", auth, (req, res, next) => {
   let q = updatebetdetails(req.body.betdetails, req.params.betId);
   connexion.query(
     "SELECT * FROM bets WHERE id=?",
@@ -55,7 +56,5 @@ router.put("/:betId",auth, (req, res, next) => {
     }
   );
 });
-
-
 
 module.exports = router;
