@@ -22,7 +22,7 @@ router.get(
                ArabCorrectAnswer,EngCorrectAnswer,cote,categoryId,
                users.id as userId,username
                FROM questions
-               LEFT JOIN users ON suggestorId=users.id
+               LEFT JOIN users ON suggesterId=users.id
                WHERE categoryId=${req.params.categoryId};`;
 
       connexion.query(q, (error, result) => {
@@ -79,12 +79,12 @@ router.post(
         if (!result[0])
           return res.status(400).json({ message: "category not found" });
         let q = "SELECT 1 ";
-        if (req.body.suggestorId)
-          q = `SELECT * FROM users WHERE id=${req.body.suggestorId}`;
+        if (req.body.suggesterId)
+          q = `SELECT * FROM users WHERE id=${req.body.suggesterId}`;
         connexion.query(q, (error, result) => {
           if (error) return next(error);
           if (!result[0])
-            return res.status(400).json({ message: "suggestorId is invalid" });
+            return res.status(400).json({ message: "suggesterId is invalid" });
           let newQuestion = {
             Engdescription: req.body.Engdescription,
             Arabdescription: req.body.Arabdescription,
@@ -99,7 +99,7 @@ router.post(
             ArabAnswerthree: req.body.ArabAnswerthree,
             ArabAnswerfour: req.body.ArabAnswerfour,
             ArabCorrectAnswer: req.body.ArabCorrectAnswer,
-            suggestorId: req.body.suggestorId || null,
+            suggesterId: req.body.suggesterId || null,
           };
           connexion.query(
             "INSERT into questions SET ?",
@@ -151,14 +151,14 @@ router.put(
           if (!result[0])
             return res.status(400).json({ message: "category not found" });
           let q = "SELECT 1 ";
-          if (req.body.suggestorId)
-            q = `SELECT * FROM users WHERE id=${req.body.suggestorId}`;
+          if (req.body.suggesterId)
+            q = `SELECT * FROM users WHERE id=${req.body.suggesterId}`;
           connexion.query(q, (error, result) => {
             if (error) return next(error);
             if (!result[0])
               return res
                 .status(400)
-                .json({ message: "suggestorId is invalid" });
+                .json({ message: "suggesterId is invalid" });
             q = `
               UPDATE questions SET 
               Engdescription="${
@@ -194,7 +194,7 @@ router.put(
               arabCorrectAnswer="${
                 req.body.ArabCorrectAnswer || question.ArabCorrectAnswer
               }",
-              suggestorId=${req.body.suggestorId || question.suggestorId},
+              suggesterId=${req.body.suggesterId || question.suggesterId},
               cote=${req.body.cote || question.cote}
               WHERE id=${req.params.questionId}
               `;

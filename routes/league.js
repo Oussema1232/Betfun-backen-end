@@ -18,18 +18,18 @@ router.post("/", auth, (req, res, next) => {
     "SELECT * FROM betfun_domains WHERE id=?",
     req.body.domainId,
     (error, result) => {
-      if (error) return next(error);
       if (!result[0])
         return res.status(400).json({ message: "Domain not found" });
+      if (error) return next(error);
       connexion.query(
         "SELECT * FROM user_domains WHERE userId=? AND domainId=?",
         [req.body.userId, req.body.domainId],
         (error, result) => {
-          if (error) return next(error);
           if (!result[0])
             return res
               .status(400)
               .json({ message: "You are not registered at this domain" });
+          if (error) return next(error);
           const code = nanoid(8);
           let newLeague = {
             name: req.body.name,
@@ -98,22 +98,21 @@ router.post("/join", auth, (req, res, next) => {
     `SELECT * FROM leagues WHERE code=?`,
     req.body.code,
     function (err, results) {
-      if (err) return next(err);
-      let leagueresult = results[0];
-      if (!leagueresult)
+      if (!results[0])
         return res
           .status(400)
           .json({ message: "No league found under this code" });
-
+      if (err) return next(err);
+      let leagueresult = results[0];
       connexion.query(
         `SELECT * FROM user_league WHERE userId=? AND leagueId=?`,
         [req.body.userId, leagueresult.id],
         function (err, results) {
-          if (err) next(err);
           if (results[0])
             return res
               .status(400)
               .json({ message: "You are already registred in this league" });
+          if (err) next(err);
           connexion.query(
             `
           SELECT * FROM user_domains
@@ -123,11 +122,11 @@ router.post("/join", auth, (req, res, next) => {
           `,
             [req.body.userId, leagueresult.domainId],
             (error, result) => {
-              if (error) return next(error);
               if (!result[0])
                 return res
                   .status(400)
                   .json({ message: "You are not registered in this domain" });
+              if (error) return next(error);
               let q = `INSERT INTO user_league SET?`;
               let userleague = {
                 userId: req.body.userId,
@@ -181,21 +180,21 @@ router.get("/rank/:leagueId/:seasonId/:month", auth, (req, res, next) => {
     WHERE leagues.id=?`,
     req.params.leagueId,
     (error, result) => {
-      if (error) return next(error);
       if (!result[0])
         return res.status(400).json({ message: "League not found" });
+      if (error) return next(error);
       if (result[0].seasonId != req.params.seasonId)
         return res
           .status(400)
-          .json({ message: "season not found for this league" });
+          .json({ message: "Season not found for this league" });
       let league = result[0];
       connexion.query(
         "SELECT * FROM gameweeks WHERE domainId=? AND seasonId=?",
         [league.domainId, req.params.seasonId],
         (error, result) => {
-          if (error) return next(error);
           if (!result[0])
             return res.status(400).json({ message: "Season not found" });
+          if (error) return next(error);
           connexion.query(
             `
         SELECT * FROM gameweeks
@@ -206,9 +205,9 @@ router.get("/rank/:leagueId/:seasonId/:month", auth, (req, res, next) => {
         `,
             [req.params.month, req.params.seasonId, league.domainId],
             (error, result) => {
-              if (error) return next(error);
               if (!result[0])
                 return res.status(400).json({ message: "Month not found" });
+              if (error) return next(error);
               connexion.query(
                 q,
                 [
@@ -290,9 +289,9 @@ router.get("/rank/:leagueId/:seasonId", auth, (req, res, next) => {
     "SELECT * FROM leagues WHERE id=?",
     req.params.leagueId,
     (error, result) => {
-      if (error) return next(error);
       if (!result[0])
         return res.status(400).json({ message: "League not found" });
+      if (error) return next(error);
       if (result[0].seasonId != req.params.seasonId)
         return res
           .status(400)
@@ -302,9 +301,9 @@ router.get("/rank/:leagueId/:seasonId", auth, (req, res, next) => {
         "SELECT * FROM gameweeks WHERE domainId=? AND seasonId=?",
         [league.domainId, req.params.seasonId],
         (error, result) => {
-          if (error) return next(error);
           if (!result[0])
             return res.status(400).json({ message: "No gameweeks yet" });
+          if (error) return next(error);
           connexion.query(
             q,
             [req.params.leagueId, req.params.seasonId, league.domainId],
@@ -467,41 +466,33 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
     "SELECT * FROM users WHERE id=?",
     req.params.userId,
     (error, result) => {
-      if (error) {
-        console.log("1");
-        return next(error);
-      }
       if (!result[0])
         return res.status(400).json({ message: "Bettor not found" });
+      if (error) return next(error);
+
       connexion.query(
         "SELECT * from betfun_domains WHERE id=?",
         req.params.domainId,
         (error, result) => {
-          if (error) {
-            console.log("2");
-            return next(error);
-          }
           if (!result[0])
             return res.status(400).json({ message: "Domain not found" });
+          if (error) return next(error);
+
           connexion.query(
             "SELECT * FROM user_domains WHERE userId=? AND domainId=?",
             [req.params.userId, req.params.domainId],
             (error, result) => {
-              if (error) {
-                console.log("3");
-                return next(error);
-              }
               if (!result[0])
                 return res
                   .status(400)
                   .json({ message: "Bettor not registered in this domain" });
+              if (error) return next(error);
+
               connexion.query(q, (error, results) => {
-                if (error) {
-                  console.log("4");
-                  return next(error);
-                }
                 if (!results[0])
                   return res.status(400).json({ message: "Leagues not found" });
+                if (error) return next(error);
+
                 const leagues = results;
                 let qr = "";
                 leagues.forEach((league) => {
@@ -521,15 +512,13 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                 connexion.query(
                   qr + "SELECT * from leagues WHERE genreId=0",
                   (error, result) => {
-                    if (error) {
-                      console.log("5");
-                      return next(error);
-                    }
-                    if (!results[0])
+                    if (!result[0])
                       return res.status(200).json({
                         message: "Leagues with no ranks",
                         data: results,
                       });
+                    if (error) return next(error);
+
                     result.pop();
                     for (let i = 0; i < result.length; i++) {
                       for (let j = 0; j < result[i].length; j++) {
@@ -556,10 +545,8 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                     ORDER BY played_on DESC`,
                       [req.params.domainId, leagues[0].seasonId],
                       (error, result) => {
-                        if (error) {
-                          console.log("6");
-                          return next(error);
-                        }
+                        if (error) return next(error);
+
                         let gameweek = "-";
                         let gameweekId = "";
                         result[0]
@@ -578,10 +565,7 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                   ORDER BY gameweekId DESC
                   `,
                           (error, result) => {
-                            if (error) {
-                              console.log("7");
-                              return next(error);
-                            }
+                            if (error) return next(error);
 
                             for (let i = 0; i < rank.length; i++) {
                               for (let j = 0; j < rank[i].length; j++) {
@@ -614,10 +598,8 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                             connexion.query(
                               ql + "SELECT * from leagues WHERE genreId=0",
                               (error, result) => {
-                                if (error) {
-                                  console.log("8");
-                                  return next(error);
-                                }
+                                if (error) return next(error);
+
                                 result.pop();
                                 for (let i = 0; i < result.length; i++) {
                                   for (let j = 0; j < result[i].length; j++) {
@@ -704,13 +686,13 @@ router.get("/:leagueId", auth, (req, res, next) => {
     "SELECT * FROM leagues WHERE id=?",
     req.params.leagueId,
     (error, result) => {
-      if (error) return next(error);
       if (!result[0])
         return res.status(400).json({ message: "League not found" });
       if (req.user.id != result[0].creatorId)
         return res.status(403).json({
           message: "Only the creator of this league can get the code",
         });
+      if (error) return next(error);
       return res.status(200).json({ message: "code", data: result[0].code });
     }
   );
