@@ -5,9 +5,9 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 // nv round
-router.get("/:categoryId/:language",auth, (req, res, next) => {
+router.get("/:categoryId/:language", auth, (req, res, next) => {
   let q = "";
-  req.params.categoryId == "all"
+  req.params.categoryId == "All"
     ? (q = "")
     : (q = `WHERE id=${req.params.categoryId}`);
   connexion.query("SELECT * FROM categories " + q, (error, result) => {
@@ -19,7 +19,7 @@ router.get("/:categoryId/:language",auth, (req, res, next) => {
             ? "الفئة غير موجودة"
             : "Category not found",
       });
-    req.params.categoryId == "all"
+    req.params.categoryId == "All"
       ? (q = "")
       : (q = `WHERE categoryId=${req.params.categoryId} `);
     connexion.query(
@@ -69,109 +69,105 @@ router.get("/:categoryId/:language",auth, (req, res, next) => {
 });
 
 //save round
-router.post(
-  "/:language",
-  auth,
-  (req, res, next) => {
-    if (req.body.userId != req.user.id)
+router.post("/:language", auth, (req, res, next) => {
+  if (req.body.userId != req.user.id)
     return res.status(403).json({ message: "Access forbidden" });
-    if (!req.body.roundDetails)
-      return res.status(400).json({ message: "roundDetails is required" });
-    if (req.body.roundDetails.length != 10)
-      return res
-        .status(400)
-        .json({ message: "Number of questions should be 10" });
-    if (!req.body.difficultyId)
-      return res.status(400).json({ message: "Difficulty is required" });
+  if (!req.body.roundDetails)
+    return res.status(400).json({ message: "roundDetails is required" });
+  if (req.body.roundDetails.length != 10)
+    return res
+      .status(400)
+      .json({ message: "Number of questions should be 10" });
+  if (!req.body.difficultyId)
+    return res.status(400).json({ message: "Difficulty is required" });
 
-    connexion.query(
-      "SELECT * FROM difficulties WHERE id=?",
-      req.body.difficultyId,
-      (error, result) => {
-        if (error) return next(error);
-        if (!result[0])
-          return res.status(400).json({ message: "Difficulty not found" });
-        let difficulty = result[0];
-        let roundDetails = req.body.roundDetails;
-        roundDetails = roundDetails.filter((el) => el.length == 2);
-        if (roundDetails.length != 10)
-          return res.status(400).json({ message: "invalid roundDetails" });
-        let q = "";
-        for (let i = 0; i < roundDetails.length; i++) {
-          q += `
+  connexion.query(
+    "SELECT * FROM difficulties WHERE id=?",
+    req.body.difficultyId,
+    (error, result) => {
+      if (error) return next(error);
+      if (!result[0])
+        return res.status(400).json({ message: "Difficulty not found" });
+      let difficulty = result[0];
+      let roundDetails = req.body.roundDetails;
+      roundDetails = roundDetails.filter((el) => el.length == 2);
+      if (roundDetails.length != 10)
+        return res.status(400).json({ message: "invalid roundDetails" });
+      let q = "";
+      for (let i = 0; i < roundDetails.length; i++) {
+        q += `
             SELECT * FROM questions
             WHERE id=${roundDetails[i][0]}; 
             `;
-        }
-        connexion.query(q, (error, result) => {
-          if (error) return next(error);
-          result = result.filter((el) => el.length != 0);
-          if (result.length != 10)
-            return res.status(400).json({ message: "invalid questionId" });
+      }
+      connexion.query(q, (error, result) => {
+        if (error) return next(error);
+        result = result.filter((el) => el.length != 0);
+        if (result.length != 10)
+          return res.status(400).json({ message: "invalid questionId" });
 
-          let points = 0;
-          let nbCorrect = 0;
-          for (let i = 0; i < roundDetails.length; i++) {
-            if (
-              [
-                result[i][0].EngCorrectAnswer,
-                result[i][0].ArabCorrectAnswer,
-              ].includes(roundDetails[i][1])
-            ) {
-              points += result[i][0].cote * difficulty.coefficient;
-              nbCorrect += 1;
-            }
+        let points = 0;
+        let nbCorrect = 0;
+        for (let i = 0; i < roundDetails.length; i++) {
+          if (
+            [
+              result[i][0].EngCorrectAnswer,
+              result[i][0].ArabCorrectAnswer,
+            ].includes(roundDetails[i][1])
+          ) {
+            points += result[i][0].cote * difficulty.coefficient;
+            nbCorrect += 1;
           }
-          if (nbCorrect < difficulty.minCorrect)
-            return res.status(400).json({
-              message: `Number of correct answers is less then ${difficulty.minCorrect}`,
-            });
-          let newRound = {
-            userId: req.body.userId,
-            points,
-            difficultyId: req.body.difficultyId,
-          };
-          connexion.beginTransaction((err) => {
-            if (err) {
-              return next(err);
-            }
-            connexion.query(
-              "INSERT INTO round SET ?",
-              newRound,
-              (error, result) => {
+        }
+        if (nbCorrect < difficulty.minCorrect)
+          return res.status(400).json({
+            message: `Number of correct answers is less then ${difficulty.minCorrect}`,
+          });
+        let newRound = {
+          userId: req.body.userId,
+          points,
+          difficultyId: req.body.difficultyId,
+        };
+        connexion.beginTransaction((err) => {
+          if (err) {
+            return next(err);
+          }
+          connexion.query(
+            "INSERT INTO round SET ?",
+            newRound,
+            (error, result) => {
+              if (error) {
+                return connexion.rollback(function () {
+                  return next(error);
+                });
+              }
+              for (let i = 0; i < roundDetails.length; i++) {
+                roundDetails[i].push(result.insertId);
+              }
+              let q = `INSERT INTO roundDetails(idQuestion,userAnswer,roundId) VALUES ?`;
+              connexion.query(q, [roundDetails], (error, result) => {
                 if (error) {
                   return connexion.rollback(function () {
                     return next(error);
                   });
                 }
-                for (let i = 0; i < roundDetails.length; i++) {
-                  roundDetails[i].push(result.insertId);
-                }
-                let q = `INSERT INTO roundDetails(idQuestion,userAnswer,roundId) VALUES ?`;
-                connexion.query(q, [roundDetails], (error, result) => {
-                  if (error) {
+                connexion.commit(function (err) {
+                  if (err) {
                     return connexion.rollback(function () {
-                      return next(error);
+                      return next(err);
                     });
                   }
-                  connexion.commit(function (err) {
-                    if (err) {
-                      return connexion.rollback(function () {
-                        return next(err);
-                      });
-                    }
-                    return res
-                      .status(200)
-                      .json({ message: "points", data: points });
-                  });
+                  return res
+                    .status(200)
+                    .json({ message: "points", data: points });
                 });
-              }
-            );
-          });
+              });
+            }
+          );
         });
-      }
-    );
-  }
-);
+      });
+    }
+  );
+});
 
 module.exports = router;
