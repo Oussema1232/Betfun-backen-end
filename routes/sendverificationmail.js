@@ -24,10 +24,10 @@ router.get("/:emailtoken", (req, res, next) => {
         return next(err);
       }
       let transporter = nodemailer.createTransport({
-        host: "box2030.bluehost.com",
-    
+        host: "mail.betfun.com",
+
         secureConnection: false, // TLS requires secureConnection to be false
-        port: 465, // port for secure SMTP
+        port: 587, // port for secure SMTP
         auth: {
           user: "betfuncompany@betfun.com",
           pass: config.get("emailpassword"),
