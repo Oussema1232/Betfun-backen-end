@@ -12,8 +12,8 @@ const router = express.Router();
 //create user
 router.post("/", (req, res, next) => {
   let transporter = nodemailer.createTransport({
-    host: "mail.betfun.com",
-    name: "mail.betfun.com",
+    host: "box2030.bluehost.com",
+    
     secureConnection: false, // TLS requires secureConnection to be false
     port: 465, // port for secure SMTP
     auth: {
