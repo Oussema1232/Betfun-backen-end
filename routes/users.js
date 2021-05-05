@@ -15,7 +15,7 @@ router.post("/", (req, res, next) => {
     host: "144.208.64.10",
 
     secureConnection: false, // TLS requires secureConnection to be false
-    port: 587, // port for secure SMTP
+    port: 465, // port for secure SMTP
 
     requireTLS: true,
     auth: {
