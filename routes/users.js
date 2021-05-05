@@ -12,14 +12,14 @@ const router = express.Router();
 //create user
 router.post("/", (req, res, next) => {
   let transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: "144.208.64.10",
 
     secureConnection: false, // TLS requires secureConnection to be false
     port: 587, // port for secure SMTP
 
     requireTLS: true,
     auth: {
-      user: "betfuncompany@gmail.com",
+      user: "betfuncompany@betfun.com",
       pass: config.get("emailpassword"),
     },
     tls: {
@@ -35,8 +35,6 @@ router.post("/", (req, res, next) => {
     req.body.email,
     function (err, results) {
       if (err) return next(err);
-      console.log(results);
-      console.log(req.body.email);
       if (results[0])
         return res.status(400).json({ message: "email already exists" });
       connexion.query(
@@ -44,7 +42,7 @@ router.post("/", (req, res, next) => {
         req.body.username,
         function (err, results) {
           if (err) return next(err);
-         
+
           if (results[0])
             return res.status(400).json({ message: "username already exists" });
 
@@ -149,7 +147,7 @@ router.post("/", (req, res, next) => {
                                     await transporter.sendMail(
                                       {
                                         from:
-                                          '"BetFun" <betfuncompany@gmail.com>', // sender address
+                                          '"BetFun" <betfuncompany@betfun.com>', // sender address
                                         to: user.email, // list of receivers
                                         subject: "email verification", // Subject line
                                         text: "click on the link bellow", // plain text body
@@ -249,7 +247,7 @@ router.get("/:id", auth, (req, res, next) => {
 
       if (!results[0])
         return res.status(400).send("Bettor not found under this id");
-     return res.status(200).send(_.omit(results[0], ["userpassword"]));
+      return res.status(200).send(_.omit(results[0], ["userpassword"]));
     }
   );
 });

@@ -24,14 +24,14 @@ router.get("/:emailtoken", (req, res, next) => {
         return next(err);
       }
       let transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
+        host: "144.208.64.10",
 
         secureConnection: false, // TLS requires secureConnection to be false
         port: 587, // port for secure SMTP
 
         requireTLS: true,
         auth: {
-          user: "betfuncompany@gmail.com",
+          user: "betfuncompany@betfun.com",
           pass: config.get("emailpassword"),
         },
         tls: {
@@ -44,7 +44,7 @@ router.get("/:emailtoken", (req, res, next) => {
       //send mail
       await transporter.sendMail(
         {
-          from: '"BetFun" <betfuncompany@gmail.com>', // sender address
+          from: '"BetFun" <betfuncompany@betfun.com>', // sender address
           to: decoded.email, // list of receivers
           subject: "email verification", // Subject line
           text: "click on the link bellow", // plain text body
