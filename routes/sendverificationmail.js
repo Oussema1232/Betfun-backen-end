@@ -24,12 +24,10 @@ router.get("/:emailtoken", (req, res, next) => {
         return next(err);
       }
       let transporter = nodemailer.createTransport({
-        host: "144.208.64.10",
-
+        host: "mail.betfun.com",
+        name: "mail.betfun.com",
         secureConnection: false, // TLS requires secureConnection to be false
         port: 465, // port for secure SMTP
-
-        requireTLS: true,
         auth: {
           user: "betfuncompany@betfun.com",
           pass: config.get("emailpassword"),
