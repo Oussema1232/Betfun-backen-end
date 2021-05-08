@@ -773,6 +773,11 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                                           console.log("9");
                                           return next(error);
                                         }
+                                        leagues.unshift(
+                                          leagues[leagues.length - 1]
+                                        );
+                                        leagues.pop();
+                                        leagues[0].months = result;
                                         leagues[0].months = result;
                                         return res.status(200).json({
                                           message: "Leagues",
