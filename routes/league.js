@@ -336,6 +336,9 @@ router.get("/rank/:leagueId/:seasonId/:domainId", auth, (req, res, next) => {
           (error, result) => {
             if (error) return next(error);
             for (let i = 0; i < result.length; i++) {
+              if (result[i].total_points == null) {
+                result[i].total_points = 0;
+              }
               if (i == 0) {
                 result[i].rank = i + 1;
               } else if (result[i].total_points == result[i - 1].total_points) {
