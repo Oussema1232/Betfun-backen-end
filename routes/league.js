@@ -338,14 +338,13 @@ router.get("/rank/:leagueId/:seasonId/:domainId", auth, (req, res, next) => {
             for (let i = 0; i < result.length; i++) {
               if (i == 0) {
                 result[i].rank = i + 1;
+              } else if (result[i].total_points == result[i - 1].total_points) {
+                result[i].rank = result[i - 1].rank;
               } else {
-                if (result[i].total_points == result[i - 1].total_points) {
-                  result[i].rank = result[i - 1].rank;
-                } else {
-                  result[i].rank = i + 1;
-                }
+                result[i].rank = i + 1;
               }
             }
+
             const rank = result;
             connexion.query(
               `SELECT * FROM calendar_results
@@ -777,7 +776,6 @@ router.get("/:userId/:domainId", auth, (req, res, next) => {
                                           leagues[leagues.length - 1]
                                         );
                                         leagues.pop();
-
                                         leagues[0].months = result;
                                         return res.status(200).json({
                                           message: "Leagues",
