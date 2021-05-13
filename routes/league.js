@@ -229,6 +229,8 @@ router.get("/rank/:leagueId/:seasonId/:month/:domainId", (req, res, next) => {
               (error, result) => {
                 if (error) return next(error);
                 for (let i = 0; i < result.length; i++) {
+                  if (result[i].total_points == null)
+                    result[i].total_points = 0;
                   if (i == 0) {
                     result[i].rank = i + 1;
                   } else {
@@ -264,7 +266,10 @@ router.get("/rank/:leagueId/:seasonId/:month/:domainId", (req, res, next) => {
 
                     if (!user[0]) {
                       result[i].total_points = 0;
-                      result[i].rank = x + 1;
+                      rank.length != 0 &&
+                      rank[rank.length - 1].total_points == 0
+                        ? (result[i].rank = rank[rank.length - 1].rank)
+                        : (result[i].rank = x + 1);
                       result[i].seasonname = league.seasonname;
                       result[i].month = req.params.month;
                       rank.push(result[i]);
@@ -477,7 +482,10 @@ router.get("/rank/:leagueId/:seasonId/:domainId", auth, (req, res, next) => {
 
                             if (!user[0]) {
                               result[i].total_points = 0;
-                              result[i].rank = x + 1;
+                              rank.length != 0 &&
+                              rank[rank.length - 1].total_points == 0
+                                ? (result[i].rank = rank[rank.length - 1].rank)
+                                : (result[i].rank = x + 1);
                               result[i].GW_points = 0;
                               result[i].gameweek = gameweek;
                               result[i].oldRank = "-";
