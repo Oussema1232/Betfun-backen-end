@@ -4,8 +4,27 @@ const updatebetdetails = require("../querry/updatebetdetails");
 const auth = require("../middleware/auth");
 const router = express.Router();
 
+//verifybet
+router.post("/verifybet", auth, (req, res, next) => {
+  if (req.body.userId != req.user.id)
+    return res.status(403).json({ message: "Access forbidden" });
+  connexion.query(
+    "SELECT * FROM bets WHERE userId=? AND gameweekId=?",
+    [req.body.userId, req.body.gameweekId],
+    (err, result) => {
+      if (err) {
+        return connexion.rollback(function () {
+          return next(err);
+        });
+      }
+
+      if (result[0])
+        return res.status(200).json({ message: "Bet already created" });
+    }
+  );
+});
 //create bet
-router.post("/",auth, (req, res, next) => {
+router.post("/", auth, (req, res, next) => {
   if (req.body.userId != req.user.id)
     return res.status(403).json({ message: "Access forbidden" });
   connexion.beginTransaction(function (err) {
@@ -60,7 +79,7 @@ router.post("/",auth, (req, res, next) => {
                     return next(err);
                   });
                 }
-                res.status(200).json({message:"Bet created successfully"});
+                res.status(200).json({ message: "Bet created successfully" });
               });
             });
           }
@@ -95,7 +114,7 @@ router.put("/:betId", auth, (req, res, next) => {
 });
 
 //get bets of a specific user at specefic domain and a specefic season
-router.get("/:userId/:seasonId/:domainId",auth, (req, res, next) => {
+router.get("/:userId/:seasonId/:domainId", auth, (req, res, next) => {
   const q = `
   SELECT * FROM bets 
   JOIN gameweeks 
@@ -142,7 +161,7 @@ router.get("/:userId/:seasonId/:domainId",auth, (req, res, next) => {
 });
 
 //get bet of a specific user at a specific gameweek at a specific season
-router.get("/:userId/:gameweekId",auth, (req, res, next) => {
+router.get("/:userId/:gameweekId", auth, (req, res, next) => {
   const q = `
       SELECT * FROM bets 
       JOIN gameweeks 
@@ -190,7 +209,7 @@ router.get("/:userId/:gameweekId",auth, (req, res, next) => {
 });
 
 //get bets of specific user at specific domain (all season)
-router.get("/all/seasons/:userId/:domainId",auth, (req, res, next) => {
+router.get("/all/seasons/:userId/:domainId", auth, (req, res, next) => {
   const q = `
       SELECT bets.id as id ,gameweeks.name as gameweekname,seasonId,gameweeks.id as gameweekId,userId,gameweekId,bets.created_at,points,domainId,date_format(bets.created_at,'%d/%m/%y') as date,
       date_format(bets.created_at,'%H:%i')  as time FROM bets
@@ -229,7 +248,7 @@ router.get("/all/seasons/:userId/:domainId",auth, (req, res, next) => {
 });
 
 //get domains of specefic user
-router.get("/:userId",auth, (req, res, next) => {
+router.get("/:userId", auth, (req, res, next) => {
   const q = `
   SELECT domainId,name as domain_name, logo FROM user_domains
   JOIN betfun_domains ON id=domainId
@@ -244,7 +263,9 @@ router.get("/:userId",auth, (req, res, next) => {
         return res.status(400).json({ message: "Bettor not found" });
       connexion.query(q, req.params.userId, (error, results) => {
         if (error) return next(error);
-        return res.status(200).json({ message: "Bettor domains", data: results });
+        return res
+          .status(200)
+          .json({ message: "Bettor domains", data: results });
       });
     }
   );
