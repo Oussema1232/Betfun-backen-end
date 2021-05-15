@@ -15,7 +15,7 @@ router.post("/verifybet", auth, (req, res, next) => {
       if (err) return next(err);
 
       if (result[0])
-        return res.status(200).json({ message: "Bet already created" });
+        return res.status(200).json({ message: "Bet already created, go to Bets to update it" });
     }
   );
 });
