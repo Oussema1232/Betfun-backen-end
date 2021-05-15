@@ -6,14 +6,13 @@ const router = express.Router();
 
 //verifybet
 router.post("/verifybet", auth, (req, res, next) => {
-  if (req.body.userId != req.user.id)
-    return res.status(403).json({ message: "Access forbidden" });
   connexion.query(
     "SELECT * FROM bets WHERE userId=? AND gameweekId=?",
     [req.body.userId, req.body.gameweekId],
     (err, result) => {
       if (err) return next(err);
-
+      if (!result[0])
+      return res.status(400).json({ message: "No bet" });
       if (result[0])
         return res.status(200).json({ message: "Bet already created, go to Bets to update it" });
     }
