@@ -1,11 +1,11 @@
 const express = require("express");
 const connexion = require("../startup/database");
 const auth = require("../middleware/auth");
-
+const _ = require("lodash");
 const router = express.Router();
 
 //get kings at specific domain and specific season
-router.get("/kings/:seasonId/:domainId", (req, res, next) => {
+router.get("/kings/:seasonId/:domainId", auth, (req, res, next) => {
   const seasonkings = (x) => {
     return `
   SELECT * from (
@@ -132,9 +132,15 @@ router.get("/kings/:seasonId/:domainId", (req, res, next) => {
                             }
                           }
 
+                          const data = _.orderBy(
+                            kings[0],
+                            "total_points",
+                            "desc"
+                          );
+
                           return res
                             .status(200)
-                            .json({ message: "kings", data: kings[0] });
+                            .json({ message: "kings", data: data });
                         }
                       );
                     }
