@@ -4,8 +4,9 @@
   "emailpassword": "",
   "dbinfo": {
     "host": "",
-    "user": "",
+    "user": "root",
     "password": "",
+
     "database": "heroku_944775d9123c355",
     "multipleStatements": true
   },

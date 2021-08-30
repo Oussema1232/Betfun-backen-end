@@ -5,7 +5,7 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 //get kings at specific domain and specific season
-router.get("/kings/:seasonId/:domainId",auth, (req, res, next) => {
+router.get("/kings/:seasonId/:domainId", (req, res, next) => {
   const seasonkings = (x) => {
     return `
   SELECT * from (
@@ -87,7 +87,7 @@ router.get("/kings/:seasonId/:domainId",auth, (req, res, next) => {
                       }
 
                       connexion.query(
-                        q + "SELECT 1 WHERE 1=0",
+                        q + "SELECT * FROM seasons WHERE id=0",
                         (error, result) => {
                           if (error) return next(error);
                           if (!result[0])
